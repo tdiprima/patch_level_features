@@ -13,5 +13,5 @@ do
   case_id="${array[0]}"
   user="${array[1]}"
   size="${array[2]}"
-  qsub -v caseid=$case_id,user=$user run_jobs.pbs  
+  qsub -v caseid=$case_id,user=$user myscript.pbs  
 done < $filename

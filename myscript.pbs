@@ -2,7 +2,7 @@
 #LongQ will tell it to run on compute node
 #PBS -q longq
 # set name of job
-#PBS -N patch_level_features 
+#PBS -N patch_level_features
 #PBS -e /home/tdiprima/temp/logs/pbs/
 #PBS -o /home/tdiprima/temp/logs/pbs/
 # set the number of nodes and processes per node
@@ -21,7 +21,7 @@ case_id=$caseid
 user=$user
 
 cd $PBS_O_WORKDIR
-python run_jobs.py $case_id $user
+python myscript.py $case_id $user
 
 echo "-----------------------------------------------------"
 echo "Date: $(date)"
