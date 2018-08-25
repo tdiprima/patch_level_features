@@ -1,6 +1,7 @@
 # Image and patient level features, within tumor regions
 
 from __future__ import division
+from shapely.geometry import Point
 import sys
 import pandas
 import numpy as np
@@ -82,6 +83,17 @@ def something():
     print "hello"
 
 
+def compute_intersection_demo():
+    """
+    calculating area of polygon inside region
+    :return:
+    """
+    a = Point(1, 1).buffer(1.5)
+    b = Point(2, 1).buffer(1.5)
+    c = a.intersection(b)
+    print "intersect area: ", c.area
+
+
 def compute_rnm(data_frame):
     """
     ratio of nuclear material
@@ -112,4 +124,5 @@ def process_file(filename):
 
 csv_file = 'input_demo.csv'
 # readfile_demo(csv_file)
-process_file(csv_file)
+# process_file(csv_file)
+compute_intersection_demo()
