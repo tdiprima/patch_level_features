@@ -9,6 +9,11 @@ import pandas
 import numpy as np
 # import statistics
 # import matplotlib.pyplot as plt
+from imutils import contours
+from skimage import measure
+import numpy as np
+import imutils
+import cv2
 
 # This program will take arguments:
 # slide_name
@@ -79,7 +84,7 @@ def readfile_demo(filename):
 
 def compute_intersection():
     """
-    get markups (region segmentations) and do intersection
+    get markup (region segmentation) and do intersection
     :return:
     """
     print "hello"
@@ -129,6 +134,26 @@ def is_within_patch():
     print "lele"
 
 
+def detect_bright_spots():
+    """
+    Detect bright spots (no staining) and ignore those areas in area computation
+    https://www.pyimagesearch.com/2016/10/31/detecting-multiple-bright-spots-in-an-image-with-python-and-opencv/
+    :return:
+    """
+    # load the image, convert it to grayscale, and blur it
+    image = cv2.imread('demo/detect_bright_spots.png')
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.GaussianBlur(gray, (11, 11), 0)
+    # threshold the image to reveal light regions in the
+    # blurred image
+    # Pixel values p >= 200 are set to 255 (white)
+    # Pixel values < 200 are set to 0 (black).
+    thresh = cv2.threshold(blurred, 200, 255, cv2.THRESH_BINARY)[1]
+    # show the output image
+    cv2.imshow("Image", thresh)
+    cv2.waitKey(0)
+
+
 def compute_rnm(data_frame):
     """
     ratio of nuclear material
@@ -151,5 +176,6 @@ csv_file = 'input_demo.csv'
 # readfile_demo(csv_file)
 # df = pandas.read_csv(csv_file)
 # compute_rnm(df)
-compute_intersection_demo()
+# compute_intersection_demo()
 # is_within_roi()
+detect_bright_spots()
