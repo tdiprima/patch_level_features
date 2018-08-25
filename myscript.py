@@ -1,3 +1,6 @@
+# Image and patient level features, within tumor regions
+
+from __future__ import division
 import sys
 import pandas
 import numpy as np
@@ -17,18 +20,19 @@ count = len(arguments)
 # check command-line arguments
 if count != 5:
     print 'Usage: python ' + program_name + ' slide_name user_name tile_size db_host'
+    tile_size = 512
     # sys.exit(1)
 
 
-def str_to_arr(dataframe, elem_name, idx):
+def str_to_arr(data_frame, elem_name, idx):
     """
     Convert Polygon string to array of float values
-    :param dataframe:
+    :param data_frame:
     :param elem_name:
     :param idx:
     :return:
     """
-    str1 = dataframe[elem_name][idx]
+    str1 = data_frame[elem_name][idx]
     str2 = ''
 
     if str1.startswith('[') and str1.endswith(']'):
@@ -42,7 +46,7 @@ def str_to_arr(dataframe, elem_name, idx):
 
 def readfile_demo(filename):
     """
-    Things we can do with this file
+    Demonstrate ways in which to analyze the CSV file
     :param filename:
     :return:
     """
@@ -64,20 +68,48 @@ def readfile_demo(filename):
     # small_df = df[:3]
     # small_df['AreaInPixels'].plot()
 
+    # PLOT!
     ax = df['AreaInPixels'].plot()
     ax.set_xlabel("Num of Objects")
     ax.set_ylabel("AreaInPixels")
 
 
-def processfile(filename):
+def something():
     """
-    Using 1 input file
+    get markups (region segmentations) and do intersection
+    :return:
+    """
+    print "hello"
+
+
+def compute_rnm(data_frame):
+    """
+    ratio of nuclear material
+    :param data_frame:
+    :return:
+    """
+    # side_length = tile_size  # global
+    # TODO: temporary, we're pretending patch is tile
+    side_length = 2000  # either 2 or 4
+    area_square = side_length * side_length
+    # print "area_square: ", area_square
+    total_polygon_area = data_frame['AreaInPixels'].sum()
+    # print "total_polygon_area: ", total_polygon_area
+    rnm = float(total_polygon_area / area_square)
+    # print "ratio of nuclear material: ", rnm
+    return rnm
+
+
+def process_file(filename):
+    """
+    Process 1 input file
     :param filename:
     :return:
     """
     df = pandas.read_csv(filename)
+    compute_rnm(df)
 
 
 csv_file = 'input_demo.csv'
-readfile_demo(csv_file)
-# processfile(csv_file)
+# readfile_demo(csv_file)
+process_file(csv_file)
