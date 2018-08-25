@@ -64,7 +64,9 @@ def readfile_demo(filename):
     # small_df = df[:3]
     # small_df['AreaInPixels'].plot()
 
-    df['AreaInPixels'].plot()
+    ax = df['AreaInPixels'].plot()
+    ax.set_xlabel("Num of Objects")
+    ax.set_ylabel("AreaInPixels")
 
 
 def processfile(filename):
