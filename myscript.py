@@ -2,11 +2,13 @@
 
 from __future__ import division
 from shapely.geometry import Point
+from shapely.geometry import Polygon
+from shapely.geometry import box
 import sys
 import pandas
 import numpy as np
-import statistics
-import matplotlib.pyplot as plt
+# import statistics
+# import matplotlib.pyplot as plt
 
 # This program will take arguments:
 # slide_name
@@ -75,7 +77,7 @@ def readfile_demo(filename):
     ax.set_ylabel("AreaInPixels")
 
 
-def something():
+def compute_intersection():
     """
     get markups (region segmentations) and do intersection
     :return:
@@ -88,10 +90,43 @@ def compute_intersection_demo():
     calculating area of polygon inside region
     :return:
     """
+    # http://toblerity.org/shapely/manual.html
     a = Point(1, 1).buffer(1.5)
     b = Point(2, 1).buffer(1.5)
     c = a.intersection(b)
-    print "intersect area: ", c.area
+    print "intersect area (circles): ", c.area
+
+    # http://toblerity.org/shapely/manual.html#polygons
+    a = Polygon([(0, 0), (1, 1), (1, 0)])
+    b = Polygon([(0.5, 0.5), (1.5, 1.5), (1.5, 0.5)])
+    c = a.intersection(b)
+    print "intersect area (polygons): ", c.area
+    # poly = Polygon(list(zip(X[0], Y[0])))
+
+    # a = box(0, 0, 3, 3)  # patch
+    b = Polygon([(0, 0), (0, 2), (2, 2), (2, 0)])  # roi
+    c = Polygon([(0.5, 0.5), (1.0, 1.0), (1.5, 0.5), (1.0, 0.0)])  # polygon
+    d = c.intersection(b)
+    print "poly area", c.area
+    print "intersect area (poly, roi): ", d.area
+    # WITHIN:
+    # object's boundary and interior intersect only with the interior of the other
+    # (not its boundary or exterior)
+    print "poly within roi: ", c.within(b)
+    # CROSSES:
+    # interior of the object intersects the interior of the other but does not contain it...
+    print "poly crosses roi: ", c.crosses(b)
+    # DISJOINT: boundary and interior of the object do not intersect at all
+    print "poly does not intersect roi: ", c.disjoint(b)
+
+
+def is_within_roi():
+    b = box(0.0, 0.0, 1.0, 1.0)
+    print b
+
+
+def is_within_patch():
+    print "lele"
 
 
 def compute_rnm(data_frame):
@@ -112,17 +147,9 @@ def compute_rnm(data_frame):
     return rnm
 
 
-def process_file(filename):
-    """
-    Process 1 input file
-    :param filename:
-    :return:
-    """
-    df = pandas.read_csv(filename)
-    compute_rnm(df)
-
-
 csv_file = 'input_demo.csv'
 # readfile_demo(csv_file)
-# process_file(csv_file)
+# df = pandas.read_csv(csv_file)
+# compute_rnm(df)
 compute_intersection_demo()
+# is_within_roi()
