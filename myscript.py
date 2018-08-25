@@ -1,6 +1,8 @@
 import sys
 import pandas
 import numpy as np
+import statistics
+import matplotlib.pyplot as plt
 
 # This program will take arguments:
 # slide_name
@@ -46,15 +48,26 @@ def readfile_demo(filename):
     """
     df = pandas.read_csv(filename)
 
+    print("*** COLUMN TYPES ***")
     for name, values in df.iteritems():
         print '{name}: {type}'.format(name=name, type=type(values[0]))
         # print '{name}: {value}'.format(name=name, value=values[0])
 
-        arr = str_to_arr(df, 'Polygon', 0)
-        print arr
+    print("*** POLYGON ***")
+    arr = str_to_arr(df, 'Polygon', 0)
+    print arr
+
+    print("*** DESCRIBE ***")
+    print(df.describe())
+
+    # Look at the first 3 rows
+    # small_df = df[:3]
+    # small_df['AreaInPixels'].plot()
+
+    df['AreaInPixels'].plot()
 
 
-def readfile(filename):
+def processfile(filename):
     """
     Using 1 input file
     :param filename:
@@ -64,5 +77,5 @@ def readfile(filename):
 
 
 csv_file = 'input_demo.csv'
-# readfile_demo(csv_file)
-readfile(csv_file)
+readfile_demo(csv_file)
+# processfile(csv_file)
