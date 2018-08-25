@@ -18,26 +18,51 @@ if count != 5:
     # sys.exit(1)
 
 
+def str_to_arr(dataframe, elem_name, idx):
+    """
+    Convert Polygon string to array of float values
+    :param dataframe:
+    :param elem_name:
+    :param idx:
+    :return:
+    """
+    str1 = dataframe[elem_name][idx]
+    str2 = ''
+
+    if str1.startswith('[') and str1.endswith(']'):
+        str2 = str1[1:-1]  # slice first and last
+
+    if str2 != '':
+        return np.fromstring(str2, dtype=float, sep=':')
+    else:
+        return None
+
+
 def readfile_demo(filename):
-    # temporarily using 1 input file
+    """
+    Things we can do with this file
+    :param filename:
+    :return:
+    """
     df = pandas.read_csv(filename)
 
     for name, values in df.iteritems():
         print '{name}: {type}'.format(name=name, type=type(values[0]))
         # print '{name}: {value}'.format(name=name, value=values[0])
 
-    # Convert Polygon string to array of float values
-    str1 = df['Polygon'][0]
-
-    if str1.startswith('[') and str1.endswith(']'):
-        # slice first and last
-        str2 = str1[1:-1]
-
-    print str2
-
-    arr = np.fromstring(str2, dtype=float, sep=':')
-    print arr
+        arr = str_to_arr(df, 'Polygon', 0)
+        print arr
 
 
-filename = 'input_demo.csv'
-readfile_demo(filename)
+def readfile(filename):
+    """
+    Using 1 input file
+    :param filename:
+    :return:
+    """
+    df = pandas.read_csv(filename)
+
+
+csv_file = 'input_demo.csv'
+# readfile_demo(csv_file)
+readfile(csv_file)
