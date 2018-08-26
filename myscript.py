@@ -160,7 +160,6 @@ def is_within_patch():
 def detect_bright_spots():
     """
     Detect bright spots (no staining) and ignore those areas in area computation
-    https://www.pyimagesearch.com/2016/10/31/detecting-multiple-bright-spots-in-an-image-with-python-and-opencv/
     :return:
     """
     # load the image, convert it to grayscale, and blur it
