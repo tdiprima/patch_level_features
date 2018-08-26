@@ -10,6 +10,7 @@
 # import the necessary packages
 import argparse
 import cv2
+import sys
 
 
 def susceptible_method(grayscale_img, orig_image):
@@ -62,6 +63,11 @@ def more_robust_method(grayscale_img, orig_image):
     cv2.imshow("Robust", image1)
     cv2.waitKey(0)
 
+
+if not len(sys.argv) > 1:
+    print("USAGE:")
+    print("python bright.py --image images/retina.png --radius 41")
+    exit(1)
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
