@@ -12,6 +12,18 @@ import numpy as np
 import argparse
 import imutils
 import cv2
+import sys
+
+
+def show_img(im):
+    cv2.imshow("image", im)
+    cv2.waitKey(0)
+
+
+if not len(sys.argv) > 1:
+    print("USAGE:")
+    print("python detect_bright_spots.py --image images/lights_01.png")
+    exit(1)
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -19,10 +31,13 @@ ap.add_argument("-i", "--image", required=True,
                 help="path to the image file")
 args = vars(ap.parse_args())
 
-# load the image, convert it to grayscale, and blur it
+# load the image
 image = cv2.imread(args["image"])
+# convert it to grayscale
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+# blur it (smooth it)
 blurred = cv2.GaussianBlur(gray, (11, 11), 0)
+show_img(blurred)
 
 # threshold the image to reveal light regions in the
 # blurred image
