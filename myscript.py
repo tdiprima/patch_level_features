@@ -164,7 +164,7 @@ def detect_bright_spots():
     :return:
     """
     # load the image, convert it to grayscale, and blur it
-    image = cv2.imread('demo/detect_bright_spots.png')
+    image = cv2.imread('img/detect_bright_spots.png')
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (11, 11), 0)
     # threshold the image to reveal light regions in the
