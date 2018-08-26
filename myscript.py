@@ -2,18 +2,11 @@
 
 from __future__ import division
 from __future__ import print_function
-
 import sys
-
-# import imutils
 import cv2
-# import numpy as np
-# import statistics
-# import matplotlib.pyplot as plt
-# from imutils import contours
-# from skimage import measure
 import numpy as np
 import pandas
+import matplotlib.pyplot as plt
 from shapely.geometry import Point
 from shapely.geometry import Polygon
 from shapely.geometry import box
@@ -82,8 +75,6 @@ def show_column_types(data_frame):
         print('{name}: {type}'.format(name=name, type=type(values[0])))
         # print '{name}: {value}'.format(name=name, value=values[0])
 
-    print("ha")
-
 
 def readfile_demo(filename):
     """
@@ -111,6 +102,7 @@ def readfile_demo(filename):
     ax = data_frame['AreaInPixels'].plot()
     ax.set_xlabel("Num of Objects")
     ax.set_ylabel("AreaInPixels")
+    plt.show()
 
 
 def compute_intersection():
