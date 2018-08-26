@@ -1,9 +1,6 @@
 # Detecting multiple bright spots in an image with Python and OpenCV
 # https://www.pyimagesearch.com/2016/10/31/detecting-multiple-bright-spots-in-an-image-with-python-and-opencv/
-# # Code MODIFIED by me.
-
-# USAGE
-# python detect_bright_spots.py --image images/lights_01.png
+# Code MODIFIED by me.
 
 # import the necessary packages
 from imutils import contours
@@ -15,11 +12,109 @@ import cv2
 import sys
 
 
-def show_img(im):
-    cv2.imshow("image", im)
+def show_output(img):
+    """
+    Show the output image
+    :param img:
+    :return:
+    """
+    cv2.imshow("Image", img)
     cv2.waitKey(0)
 
 
+def grayscale_and_blur(m_image):
+    """
+    Convert image to grayscale and blur it.
+    :param m_image:
+    :return:
+    """
+    gray = cv2.cvtColor(m_image, cv2.COLOR_BGR2GRAY)
+    m_blurred = cv2.GaussianBlur(gray, (11, 11), 0)
+    # show_img(m_blurred)
+    return m_blurred
+
+
+def reveal_brightest_regions(m_blurred):
+    """
+    Apply thresholding to reveal the brighter regions of the image.
+    p >= 200 => 255 (white); p < 200 => 0 (black).
+    :param m_blurred:
+    :return:
+    """
+    m_thresh = cv2.threshold(m_blurred, 200, 255, cv2.THRESH_BINARY)[1]
+    # show_img(m_thresh)
+    return m_thresh
+
+
+def clean_up_noise(m_thresh):
+    """
+    Remove small blobs and then regrow the remaining regions.
+    :param m_thresh:
+    :return:
+    """
+    m_thresh = cv2.erode(m_thresh, None, iterations=2)
+    m_thresh = cv2.dilate(m_thresh, None, iterations=4)
+    # show_img(m_thresh)
+    return m_thresh
+
+
+def clean_up_leftover_noise(m_thresh):
+    """
+    Apply connected-component analysis to get only the
+    larger blobs in the image (which are also bright).
+    :param m_thresh:
+    :return:
+    """
+    labels = measure.label(m_thresh, neighbors=8, background=0)
+    print("m_thresh.shape: ", m_thresh.shape)
+    m_mask = np.zeros(m_thresh.shape, dtype="uint8")
+
+    # loop over the unique components
+    for label in np.unique(labels):
+        # if this is the background label, ignore it
+        if label == 0:
+            continue
+
+        # otherwise, construct the label mask and count the
+        # number of pixels
+        label_mask = np.zeros(m_thresh.shape, dtype="uint8")
+        label_mask[labels == label] = 255
+        num_pixels = cv2.countNonZero(label_mask)
+
+        # if the number of pixels in the component is sufficiently
+        # large, then add it to our mask of "large blobs"
+        if num_pixels > 300:
+            m_mask = cv2.add(m_mask, label_mask)
+
+    return m_mask
+
+
+def draw_labels(mask, m_image):
+    """
+    Find contours in mask, then sort from left to right.
+    :param mask:
+    :param m_image:
+    :return:
+    """
+    counts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
+                              cv2.CHAIN_APPROX_SIMPLE)
+    counts = counts[0] if imutils.is_cv2() else counts[1]
+    counts = contours.sort_contours(counts)[0]
+
+    # loop over the contours
+    for (i, c) in enumerate(counts):
+        # draw the bright spot on the image
+        (x, y, w, h) = cv2.boundingRect(c)
+        ((cX, cY), radius) = cv2.minEnclosingCircle(c)
+        cv2.circle(m_image, (int(cX), int(cY)), int(radius),
+                   (0, 0, 255), 3)
+        cv2.putText(m_image, "#{}".format(i + 1), (x, y - 15),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 2)
+
+    return m_image
+
+
+# start
 if not len(sys.argv) > 1:
     print("USAGE:")
     print("python detect_bright_spots.py --image images/lights_01.png")
@@ -31,63 +126,16 @@ ap.add_argument("-i", "--image", required=True,
                 help="path to the image file")
 args = vars(ap.parse_args())
 
-# load the image
 image = cv2.imread(args["image"])
-# convert it to grayscale
-gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-# blur it (smooth it)
-blurred = cv2.GaussianBlur(gray, (11, 11), 0)
-show_img(blurred)
 
-# threshold the image to reveal light regions in the
-# blurred image
-thresh = cv2.threshold(blurred, 200, 255, cv2.THRESH_BINARY)[1]
+blurred = grayscale_and_blur(image)
 
-# perform a series of erosions and dilations to remove
-# any small blobs of noise from the thresholded image
-thresh = cv2.erode(thresh, None, iterations=2)
-thresh = cv2.dilate(thresh, None, iterations=4)
+thresh = reveal_brightest_regions(blurred)
 
-# perform a connected component analysis on the thresholded
-# image, then initialize a mask to store only the "large"
-# components
-labels = measure.label(thresh, neighbors=8, background=0)
-mask = np.zeros(thresh.shape, dtype="uint8")
+thresh = clean_up_noise(thresh)
 
-# loop over the unique components
-for label in np.unique(labels):
-    # if this is the background label, ignore it
-    if label == 0:
-        continue
+mask = clean_up_leftover_noise(thresh)
 
-    # otherwise, construct the label mask and count the
-    # number of pixels
-    labelMask = np.zeros(thresh.shape, dtype="uint8")
-    labelMask[labels == label] = 255
-    numPixels = cv2.countNonZero(labelMask)
+image = draw_labels(mask, image)
 
-    # if the number of pixels in the component is sufficiently
-    # large, then add it to our mask of "large blobs"
-    if numPixels > 300:
-        mask = cv2.add(mask, labelMask)
-
-# find the contours in the mask, then sort them from left to
-# right
-cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
-                        cv2.CHAIN_APPROX_SIMPLE)
-cnts = cnts[0] if imutils.is_cv2() else cnts[1]
-cnts = contours.sort_contours(cnts)[0]
-
-# loop over the contours
-for (i, c) in enumerate(cnts):
-    # draw the bright spot on the image
-    (x, y, w, h) = cv2.boundingRect(c)
-    ((cX, cY), radius) = cv2.minEnclosingCircle(c)
-    cv2.circle(image, (int(cX), int(cY)), int(radius),
-               (0, 0, 255), 3)
-    cv2.putText(image, "#{}".format(i + 1), (x, y - 15),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 2)
-
-# show the output image
-cv2.imshow("Image", image)
-cv2.waitKey(0)
+show_output(image)
