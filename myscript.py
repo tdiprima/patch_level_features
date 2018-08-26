@@ -1,19 +1,22 @@
 # Image and patient level features, within tumor regions
 
 from __future__ import division
+from __future__ import print_function
+
+import sys
+
+# import imutils
+import cv2
+# import numpy as np
+# import statistics
+# import matplotlib.pyplot as plt
+# from imutils import contours
+# from skimage import measure
+import numpy as np
+import pandas
 from shapely.geometry import Point
 from shapely.geometry import Polygon
 from shapely.geometry import box
-import sys
-import pandas
-import numpy as np
-# import statistics
-# import matplotlib.pyplot as plt
-from imutils import contours
-from skimage import measure
-import numpy as np
-import imutils
-import cv2
 
 # This program will take arguments:
 # slide_name
@@ -27,7 +30,7 @@ count = len(arguments)
 
 # check command-line arguments
 if count != 5:
-    print 'Usage: python ' + program_name + ' slide_name user_name tile_size db_host'
+    print('Usage: python ' + program_name + ' slide_name user_name tile_size db_host')
     tile_size = 512
     # sys.exit(1)
 
@@ -52,32 +55,60 @@ def str_to_arr(data_frame, elem_name, idx):
         return None
 
 
+def get_iterator(dict1):
+    """
+    Because dict.iterkeys(), dict.iteritems() and dict.itervalues()
+    methods are not available in py3.
+    :param dict1:
+    :return:
+    """
+    try:
+        # Python 2
+        iter_obj = dict1.iteritems()
+    except AttributeError:
+        # Python 3
+        iter_obj = iter(dict1.items())
+
+    return iter_obj
+
+
+def show_column_types(data_frame):
+    """
+    :param data_frame:
+    :return:
+    """
+    iter_obj = get_iterator(data_frame)
+    for name, values in iter_obj:
+        print('{name}: {type}'.format(name=name, type=type(values[0])))
+        # print '{name}: {value}'.format(name=name, value=values[0])
+
+    print("ha")
+
+
 def readfile_demo(filename):
     """
     Demonstrate ways in which to analyze the CSV file
     :param filename:
     :return:
     """
-    df = pandas.read_csv(filename)
+    data_frame = pandas.read_csv(filename)
 
     print("*** COLUMN TYPES ***")
-    for name, values in df.iteritems():
-        print '{name}: {type}'.format(name=name, type=type(values[0]))
-        # print '{name}: {value}'.format(name=name, value=values[0])
+    show_column_types(data_frame)
 
     print("*** POLYGON ***")
-    arr = str_to_arr(df, 'Polygon', 0)
-    print arr
+    arr = str_to_arr(data_frame, 'Polygon', 0)
+    print(arr)
 
     print("*** DESCRIBE ***")
-    print(df.describe())
+    print(data_frame.describe())
 
     # Look at the first 3 rows
     # small_df = df[:3]
     # small_df['AreaInPixels'].plot()
 
     # PLOT!
-    ax = df['AreaInPixels'].plot()
+    ax = data_frame['AreaInPixels'].plot()
     ax.set_xlabel("Num of Objects")
     ax.set_ylabel("AreaInPixels")
 
@@ -87,7 +118,7 @@ def compute_intersection():
     get markup (region segmentation) and do intersection
     :return:
     """
-    print "hello"
+    print("hello")
 
 
 def compute_intersection_demo():
@@ -99,39 +130,39 @@ def compute_intersection_demo():
     a = Point(1, 1).buffer(1.5)
     b = Point(2, 1).buffer(1.5)
     c = a.intersection(b)
-    print "intersect area (circles): ", c.area
+    print("intersect area (circles): ", c.area)
 
     # http://toblerity.org/shapely/manual.html#polygons
     a = Polygon([(0, 0), (1, 1), (1, 0)])
     b = Polygon([(0.5, 0.5), (1.5, 1.5), (1.5, 0.5)])
     c = a.intersection(b)
-    print "intersect area (polygons): ", c.area
+    print("intersect area (polygons): ", c.area)
     # poly = Polygon(list(zip(X[0], Y[0])))
 
     # a = box(0, 0, 3, 3)  # patch
     b = Polygon([(0, 0), (0, 2), (2, 2), (2, 0)])  # roi
     c = Polygon([(0.5, 0.5), (1.0, 1.0), (1.5, 0.5), (1.0, 0.0)])  # polygon
     d = c.intersection(b)
-    print "poly area", c.area
-    print "intersect area (poly, roi): ", d.area
+    print("poly area", c.area)
+    print("intersect area (poly, roi): ", d.area)
     # WITHIN:
     # object's boundary and interior intersect only with the interior of the other
     # (not its boundary or exterior)
-    print "poly within roi: ", c.within(b)
+    print("poly within roi: ", c.within(b))
     # CROSSES:
     # interior of the object intersects the interior of the other but does not contain it...
-    print "poly crosses roi: ", c.crosses(b)
+    print("poly crosses roi: ", c.crosses(b))
     # DISJOINT: boundary and interior of the object do not intersect at all
-    print "poly does not intersect roi: ", c.disjoint(b)
+    print("poly does not intersect roi: ", c.disjoint(b))
 
 
 def is_within_roi():
     b = box(0.0, 0.0, 1.0, 1.0)
-    print b
+    print(b)
 
 
 def is_within_patch():
-    print "lele"
+    print("lele")
 
 
 def detect_bright_spots():
@@ -173,9 +204,9 @@ def compute_rnm(data_frame):
 
 
 csv_file = 'input_demo.csv'
-# readfile_demo(csv_file)
+readfile_demo(csv_file)
 # df = pandas.read_csv(csv_file)
 # compute_rnm(df)
 # compute_intersection_demo()
 # is_within_roi()
-detect_bright_spots()
+# detect_bright_spots()
