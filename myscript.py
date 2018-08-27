@@ -2,7 +2,7 @@ import os
 import sys
 import argparse
 import subprocess
-from pathlib import Path
+# from pathlib import Path
 from pymongo import MongoClient
 
 
@@ -41,15 +41,16 @@ def rsync_data_src():
         # m_args = list(["rsync", "-avz", "--include", "*features.csv", "--include", "*.json"])
         m_args.append(source_dir)
         m_args.append(work_dir)
-        print "executing " + ' '.join(m_args)
+        print("executing " + ' '.join(m_args))
         subprocess.call(m_args)
 
-    my_file = Path(os.path.join(work_dir, (case_id + '.svs')))
-    if not my_file.is_file():
-        svs_list = get_file_list(case_id, 'config/image_path.list')
-        svs_path = os.path.join(svs_image_path, svs_list[0])
-        print "executing scp", svs_path, work_dir
-        subprocess.check_call(['scp', svs_path, work_dir])
+    # TODO: Need pkg installed for python3 (need sudo privileges)
+    # my_file = Path(os.path.join(work_dir, (case_id + '.svs')))
+    # if not my_file.is_file():
+    svs_list = get_file_list(case_id, 'config/image_path.list')
+    svs_path = os.path.join(svs_image_path, svs_list[0])
+    print("executing scp", svs_path, work_dir)
+    subprocess.check_call(['scp', svs_path, work_dir])
 
 
 def get_composite_exec_id():
