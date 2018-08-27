@@ -3,7 +3,8 @@ import subprocess
 
 case_id = 'PC_052_0_1'
 username = ''
-work_dir = "/data1/tdiprima/dataset/"
+work_dir = "/data1/tdiprima/dataset"
+work_dir = os.path.join(work_dir, case_id)
 csv_file_path = "nfs004:/data/shared/bwang/composite_dataset"
 
 
@@ -30,16 +31,21 @@ def get_file_list(substr):
     return lines
 
 
+def rsync_data_src():
+    # Get list of csv files containing features for this case_id
+    csv_paths = get_file_list(case_id)
+
+    for csv_dir1 in csv_paths:
+        source_dir = os.path.join(csv_file_path, csv_dir1)
+
+        # copy all *.json files
+        # args = ["rsync", "-avz", "--include", "*features.csv", "--include", "*.json"]
+        args = ["rsync", "-ar", "--include", "*features.csv", "--include", "*.json"]
+        args.append(source_dir)
+        args.append(work_dir)
+        print "executing " + ' '.join(args)
+        # subprocess.call(args)
+
+
 assure_path_exists(work_dir)
-
-
-# Get list of csv files containing features for this case_id
-my_list = get_file_list(case_id)
-
-for csv_dir in my_list:
-    print (work_dir + csv_dir)
-    # subprocess.call(['rsync', '-ar', (csv_file_path + csv_dir), (work_dir + csv_dir)])
-
-# os.system has been deprecated in favor of subprocess
-# subprocess.call(['scp', detail_remote_folder + '/*.json', detail_local_folder]);
-# subprocess.call(['scp', detail_remote_folder + '/*features.csv', detail_local_folder]);
+rsync_data_src()
