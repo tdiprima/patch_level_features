@@ -3,10 +3,7 @@ import sys
 import argparse
 import subprocess
 
-case_id = 'PC_052_0_1'
-username = ''
 work_dir = "/data1/tdiprima/dataset"
-work_dir = os.path.join(work_dir, case_id)
 csv_file_path = "nfs004:/data/shared/bwang/composite_dataset"
 
 
@@ -55,6 +52,7 @@ ap.add_argument("-u", "--user_name", help="user who identified tumor regions")
 ap.add_argument("-b", "--db_host", help="database host")
 ap.add_argument("-t", "--tile_size", type=int, help="tile size")
 args = vars(ap.parse_args())
+print(args)
 
 if not len(sys.argv) > 1:
     program_name = sys.argv[0]
@@ -62,5 +60,6 @@ if not len(sys.argv) > 1:
     subprocess.call(lst)
     exit(1)
 
+work_dir = os.path.join(work_dir, args["slide_name"])
 assure_path_exists(work_dir)
 rsync_data_src()
