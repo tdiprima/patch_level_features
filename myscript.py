@@ -42,9 +42,11 @@ def rsync_data_src():
         print "executing " + ' '.join(m_args)
         subprocess.call(m_args)
 
-    svs_list = get_file_list(case_id, 'config/image_path.list')
-    svs_path = os.path.join(svs_image_path, svs_list[0])
-    subprocess.check_call(['scp', svs_path, work_dir])
+    temp = os.path.join(work_dir, (case_id + '.svs'))
+    if not temp.is_file():
+        svs_list = get_file_list(case_id, 'config/image_path.list')
+        svs_path = os.path.join(svs_image_path, svs_list[0])
+        subprocess.check_call(['scp', svs_path, work_dir])
 
 
 work_dir = "/data1/tdiprima/dataset"
