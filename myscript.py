@@ -30,9 +30,9 @@ def get_file_list(substr):
     return lines
 
 
-def rsync_data_src():
+def rsync_data_src(m_case_id):
     # Get list of csv files containing features for this case_id
-    csv_paths = get_file_list(case_id)
+    csv_paths = get_file_list(m_case_id)
 
     for csv_dir1 in csv_paths:
         source_dir = os.path.join(csv_file_path, csv_dir1)
@@ -60,6 +60,7 @@ if not len(sys.argv) > 1:
     subprocess.call(lst)
     exit(1)
 
-work_dir = os.path.join(work_dir, args["slide_name"])
+case_id = args["slide_name"]
+work_dir = os.path.join(work_dir, case_id)
 assure_path_exists(work_dir)
-rsync_data_src()
+rsync_data_src(case_id)
