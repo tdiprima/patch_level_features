@@ -2,6 +2,7 @@ import os
 import sys
 import argparse
 import subprocess
+from pathlib import Path
 from pymongo import MongoClient
 
 
@@ -43,8 +44,8 @@ def rsync_data_src():
         print "executing " + ' '.join(m_args)
         subprocess.call(m_args)
 
-    temp = os.path.join(work_dir, (case_id + '.svs'))
-    if not temp.is_file():
+    my_file = Path(os.path.join(work_dir, (case_id + '.svs')))
+    if not my_file.is_file():
         svs_list = get_file_list(case_id, 'config/image_path.list')
         svs_path = os.path.join(svs_image_path, svs_list[0])
         print "executing scp", svs_path, work_dir
