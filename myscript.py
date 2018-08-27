@@ -43,10 +43,13 @@ def rsync_data_src():
         subprocess.call(m_args)
 
     svs_path = get_file_list(case_id, 'config/image_path.list')
+    svs_path = os.path.join(svs_image_path, svs_path)
+    print(svs_path)
 
 
 work_dir = "/data1/tdiprima/dataset"
 csv_file_path = "nfs004:/data/shared/bwang/composite_dataset"
+svs_image_path = "nfs001:/data/shared/tcga_analysis/seer_data/images"
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -64,6 +67,9 @@ if not len(sys.argv) > 1:
     exit(1)
 
 case_id = args["slide_name"]
-assure_path_exists(os.path.join(work_dir, case_id))
+# temp = os.path.join(work_dir, case_id) + os.sep
+# assure_path_exists(temp)
 # rsync_data_src()
-svs_path = get_file_list(case_id, 'config/image_path.list')  # testing
+svs_path = get_file_list(case_id, 'config/image_path.list')
+svs_path = os.path.join(svs_image_path, svs_path)
+print(svs_path)
