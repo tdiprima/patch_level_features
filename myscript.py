@@ -42,9 +42,9 @@ def rsync_data_src():
         print "executing " + ' '.join(m_args)
         subprocess.call(m_args)
 
-    svs_path = get_file_list(case_id, 'config/image_path.list')
-    svs_path = os.path.join(svs_image_path, svs_path)
-    print(svs_path)
+    svs_list = get_file_list(case_id, 'config/image_path.list')
+    svs_path = os.path.join(svs_image_path, svs_list[0])
+    subprocess.check_call(['scp', svs_path, temp])
 
 
 work_dir = "/data1/tdiprima/dataset"
@@ -67,9 +67,6 @@ if not len(sys.argv) > 1:
     exit(1)
 
 case_id = args["slide_name"]
-# temp = os.path.join(work_dir, case_id) + os.sep
-# assure_path_exists(temp)
-# rsync_data_src()
-svs_path = get_file_list(case_id, 'config/image_path.list')
-svs_path = os.path.join(svs_image_path, svs_path)
-print(svs_path)
+temp = os.path.join(work_dir, case_id) + os.sep
+assure_path_exists(temp)
+rsync_data_src()
