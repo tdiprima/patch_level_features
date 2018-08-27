@@ -2,6 +2,7 @@ import os
 import sys
 import argparse
 import subprocess
+from pymongo import MongoClient
 
 
 def assure_path_exists(path):
@@ -46,7 +47,22 @@ def rsync_data_src():
     if not temp.is_file():
         svs_list = get_file_list(case_id, 'config/image_path.list')
         svs_path = os.path.join(svs_image_path, svs_list[0])
+        print "executing scp", svs_path, work_dir
         subprocess.check_call(['scp', svs_path, work_dir])
+
+
+def get_composite_exec_id():
+    client = MongoClient('mongodb://' + args["db_host"] + ':27017')
+    db = client.quip_comp
+    coll = db.metadata
+    query = {"image.case_id": case_id,
+             "provenance.analysis_execution_id": {'$regex': 'composite_dataset', '$options': 'i'}}
+    item = coll.find_one(query)
+    client.close()
+    # items = coll.find(query)
+    # for item in items:
+    #     print(item)
+    return item
 
 
 work_dir = "/data1/tdiprima/dataset"
@@ -72,3 +88,5 @@ case_id = args["slide_name"]
 work_dir = os.path.join(work_dir, case_id) + os.sep
 assure_path_exists(work_dir)
 rsync_data_src()
+exec_id = get_composite_exec_id()
+print(exec_id)
