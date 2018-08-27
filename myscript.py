@@ -3,9 +3,6 @@ import sys
 import argparse
 import subprocess
 
-work_dir = "/data1/tdiprima/dataset"
-csv_file_path = "nfs004:/data/shared/bwang/composite_dataset"
-
 
 def assure_path_exists(path):
     m_dir = os.path.dirname(path)
@@ -13,15 +10,16 @@ def assure_path_exists(path):
         os.makedirs(m_dir)
 
 
-def get_file_list(substr):
+def get_file_list(substr, filepath):
     """
     Find lines in file containing substring.
     Return list.
     :param substr:
+    :param filepath:
     :return:
     """
     lines = []
-    with open('config/csv_file_path.list') as f:
+    with open(filepath) as f:
         for line in f:
             line = line.strip()
             if substr in line:
@@ -30,9 +28,9 @@ def get_file_list(substr):
     return lines
 
 
-def rsync_data_src(m_case_id):
+def rsync_data_src():
     # Get list of csv files containing features for this case_id
-    csv_paths = get_file_list(m_case_id)
+    csv_paths = get_file_list(case_id, 'config/csv_file_path.list')
 
     for csv_dir1 in csv_paths:
         source_dir = os.path.join(csv_file_path, csv_dir1)
@@ -44,6 +42,11 @@ def rsync_data_src(m_case_id):
         print "executing " + ' '.join(m_args)
         subprocess.call(m_args)
 
+    svs_path = get_file_list(case_id, 'config/image_path.list')
+
+
+work_dir = "/data1/tdiprima/dataset"
+csv_file_path = "nfs004:/data/shared/bwang/composite_dataset"
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -57,10 +60,10 @@ print(args)
 if not len(sys.argv) > 1:
     program_name = sys.argv[0]
     lst = ['python', program_name, '-h']
-    subprocess.call(lst)
+    subprocess.call(lst)  # Show help
     exit(1)
 
 case_id = args["slide_name"]
-work_dir = os.path.join(work_dir, case_id)
-assure_path_exists(work_dir)
-rsync_data_src(case_id)
+assure_path_exists(os.path.join(work_dir, case_id))
+# rsync_data_src()
+svs_path = get_file_list(case_id, 'config/image_path.list')  # testing
