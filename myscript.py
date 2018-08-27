@@ -1,4 +1,6 @@
 import os
+import sys
+import argparse
 import subprocess
 
 case_id = 'PC_052_0_1'
@@ -37,8 +39,7 @@ def rsync_data_src():
 
     for csv_dir1 in csv_paths:
         source_dir = os.path.join(csv_file_path, csv_dir1)
-
-        # copy all *.json files
+        # copy all *.json and *features.csv files
         m_args = list(["rsync", "-ar", "--include", "*features.csv", "--include", "*.json"])
         # m_args = list(["rsync", "-avz", "--include", "*features.csv", "--include", "*.json"])
         m_args.append(source_dir)
@@ -46,6 +47,20 @@ def rsync_data_src():
         print "executing " + ' '.join(m_args)
         subprocess.call(m_args)
 
+
+# construct the argument parse and parse the arguments
+ap = argparse.ArgumentParser()
+ap.add_argument("-s", "--slide_name", help="svs image name")
+ap.add_argument("-u", "--user_name", help="user who identified tumor regions")
+ap.add_argument("-b", "--db_host", help="database host")
+ap.add_argument("-t", "--tile_size", type=int, help="tile size")
+args = vars(ap.parse_args())
+
+if not len(sys.argv) > 1:
+    program_name = sys.argv[0]
+    lst = ['python', program_name, '-h']
+    subprocess.call(lst)
+    exit(1)
 
 assure_path_exists(work_dir)
 rsync_data_src()
