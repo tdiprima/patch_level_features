@@ -39,12 +39,12 @@ def rsync_data_src():
         source_dir = os.path.join(csv_file_path, csv_dir1)
 
         # copy all *.json files
-        # args = ["rsync", "-avz", "--include", "*features.csv", "--include", "*.json"]
-        args = ["rsync", "-ar", "--include", "*features.csv", "--include", "*.json"]
-        args.append(source_dir)
-        args.append(work_dir + os.sep)
-        print "executing " + ' '.join(args)
-        # subprocess.call(args)
+        m_args = list(["rsync", "-ar", "--include", "*features.csv", "--include", "*.json"])
+        # m_args = list(["rsync", "-avz", "--include", "*features.csv", "--include", "*.json"])
+        m_args.append(source_dir)
+        m_args.append(work_dir + os.sep)
+        print "executing " + ' '.join(m_args)
+        subprocess.call(m_args)
 
 
 assure_path_exists(work_dir)
