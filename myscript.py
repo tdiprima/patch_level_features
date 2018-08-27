@@ -3,7 +3,7 @@ import subprocess
 
 case_id = 'PC_052_0_1'
 username = ''
-work_dir = "/data1/tdiprima/dataset"
+work_dir = "/data1/tdiprima/dataset/"
 csv_file_path = "nfs004:/data/shared/bwang/composite_dataset"
 
 
@@ -30,14 +30,15 @@ def get_file_list(substr):
     return lines
 
 
-assure_path_exists(case_id)
+assure_path_exists(work_dir)
 
 
 # Get list of csv files containing features for this case_id
 my_list = get_file_list(case_id)
 
-for my_dir in my_list:
-    print my_dir
+for csv_dir in my_list:
+    print (work_dir + csv_dir)
+    # subprocess.call(['rsync', '-ar', (csv_file_path + csv_dir), (work_dir + csv_dir)])
 
 # os.system has been deprecated in favor of subprocess
 # subprocess.call(['scp', detail_remote_folder + '/*.json', detail_local_folder]);
