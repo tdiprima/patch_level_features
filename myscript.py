@@ -59,7 +59,7 @@ def get_composite_exec_id():
              "provenance.analysis_execution_id": {'$regex': 'composite_dataset', '$options': 'i'}}
     item = coll.find_one(query)
     client.close()
-    return item.provenance.analysis_execution_id
+    return item['provenance']['analysis_execution_id']
 
 
 work_dir = "/data1/tdiprima/dataset"
