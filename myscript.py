@@ -38,7 +38,7 @@ def rsync_data_src():
         m_args = list(["rsync", "-ar", "--include", "*features.csv", "--include", "*.json"])
         # m_args = list(["rsync", "-avz", "--include", "*features.csv", "--include", "*.json"])
         m_args.append(source_dir)
-        m_args.append(work_dir + os.sep)
+        m_args.append(work_dir)
         print "executing " + ' '.join(m_args)
         subprocess.call(m_args)
 
