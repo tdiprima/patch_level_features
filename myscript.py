@@ -103,11 +103,9 @@ def get_tumor_markup():
                 }
         m_dict = coll.find(filter_q, projection_q)
         for item in m_dict:
+            # TODO: do something
             print(item)
         client.close()
-    except TypeError as err:
-        print(err)
-        exit(1)
     except errors.ServerSelectionTimeoutError as err:
         print(err)
         exit(1)
