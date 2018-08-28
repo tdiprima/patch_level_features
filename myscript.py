@@ -2,7 +2,7 @@ import os
 import sys
 import argparse
 import subprocess
-# from pathlib import Path
+from pathlib import Path
 from pymongo import MongoClient
 
 
@@ -44,16 +44,20 @@ def rsync_data_src():
         print("executing " + ' '.join(m_args))
         subprocess.call(m_args)
 
-    # TODO: Need pkg installed for python3 (need sudo privileges)
-    # my_file = Path(os.path.join(work_dir, (case_id + '.svs')))
-    # if not my_file.is_file():
-    svs_list = get_file_list(case_id, 'config/image_path.list')
-    svs_path = os.path.join(svs_image_path, svs_list[0])
-    print("executing scp", svs_path, work_dir)
-    subprocess.check_call(['scp', svs_path, work_dir])
+    my_file = Path(os.path.join(work_dir, (case_id + '.svs')))
+    if not my_file.is_file():
+        svs_list = get_file_list(case_id, 'config/image_path.list')
+        svs_path = os.path.join(svs_image_path, svs_list[0])
+        print("executing scp", svs_path, work_dir)
+        subprocess.check_call(['scp', svs_path, work_dir])
 
 
 def get_composite_exec_id():
+    """
+    There is only one composite dataset (unique execution_id) in quip_comp
+    database for each image.
+    :return:
+    """
     client = MongoClient('mongodb://' + args["db_host"] + ':27017')
     db = client.quip_comp
     coll = db.metadata
@@ -64,11 +68,19 @@ def get_composite_exec_id():
     return item['provenance']['analysis_execution_id']
 
 
+def get_tumor_markup():
+    """
+    Pretty self-explanatory
+    :return:
+    """
+    execution_id = (user_name + "_Tumor_Region")
+
+
 work_dir = "/data1/tdiprima/dataset"
 csv_file_path = "nfs004:/data/shared/bwang/composite_dataset"
 svs_image_path = "nfs001:/data/shared/tcga_analysis/seer_data/images"
 
-# construct the argument parse and parse the arguments
+# construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-s", "--slide_name", help="svs image name")
 ap.add_argument("-u", "--user_name", help="user who identified tumor regions")
@@ -84,8 +96,9 @@ if not len(sys.argv) > 1:
     exit(1)
 
 case_id = args["slide_name"]
+user_name = args["user_name"]
 work_dir = os.path.join(work_dir, case_id) + os.sep
 assure_path_exists(work_dir)
 rsync_data_src()
-exec_id = get_composite_exec_id()
-print(exec_id)
+composite_exec_id = get_composite_exec_id()
+print(composite_exec_id)

@@ -1,0 +1,9 @@
+# conda env create -f environment.yml
+name: myenv
+dependencies:
+  - pymongo
+  - numpy
+  - pandas
+  - shapely
+  - opencv
+  - matplotlib
