@@ -169,25 +169,20 @@ def detect_bright_spots():
     # load the image, convert it to grayscale, and blur it
     print("detect_bright_spots")
     image = cv2.imread('img/detect_bright_spots.png')
-    thresh = {}
-    try:
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        blurred = cv2.GaussianBlur(gray, (11, 11), 0)
-        # threshold the image to reveal light regions in the
-        # blurred image
-        # Pixel values p >= 200 are set to 255 (white)
-        # Pixel values < 200 are set to 0 (black).
-        thresh = cv2.threshold(blurred, 200, 255, cv2.THRESH_BINARY)[1]
-        print(type(thresh))
-    except Exception as ex:
-        print(ex)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.GaussianBlur(gray, (11, 11), 0)
+    # threshold the image to reveal light regions in the
+    # blurred image
+    # Pixel values p >= 200 are set to 255 (white)
+    # Pixel values < 200 are set to 0 (black).
+    thresh = cv2.threshold(blurred, 200, 255, cv2.THRESH_BINARY)[1]
 
     try:
         # show the output image
         cv2.imshow("Image", thresh)
         cv2.waitKey(0)
-    except Exception as ex:
-        print(ex)
+    except cv2.error as e:
+        print("\nCan't display the image.\n", e)
 
 
 def compute_rnm(data_frame):
