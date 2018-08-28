@@ -83,6 +83,7 @@ def readfile_demo(filename):
     :param filename:
     :return:
     """
+    print("readfile_demo")
     data_frame = pandas.read_csv(filename)
 
     print("*** COLUMN TYPES ***")
@@ -111,7 +112,7 @@ def compute_intersection():
     get markup (region segmentation) and do intersection
     :return:
     """
-    print("hello")
+    print("compute_intersection")
 
 
 def compute_intersection_demo():
@@ -119,6 +120,7 @@ def compute_intersection_demo():
     calculating area of polygon inside region
     :return:
     """
+    print("compute_intersection_demo")
     # http://toblerity.org/shapely/manual.html
     a = Point(1, 1).buffer(1.5)
     b = Point(2, 1).buffer(1.5)
@@ -150,12 +152,13 @@ def compute_intersection_demo():
 
 
 def is_within_roi():
+    print("is_within_roi")
     b = box(0.0, 0.0, 1.0, 1.0)
     print(b)
 
 
 def is_within_patch():
-    print("lele")
+    print("is_within_patch")
 
 
 def detect_bright_spots():
@@ -164,9 +167,10 @@ def detect_bright_spots():
     :return:
     """
     # load the image, convert it to grayscale, and blur it
+    print("detect_bright_spots")
     image = cv2.imread('img/detect_bright_spots.png')
     try:
-        print(type(image))
+        print(type(image))  # Should be <type 'numpy.ndarray'>
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         blurred = cv2.GaussianBlur(gray, (11, 11), 0)
         # threshold the image to reveal light regions in the
@@ -187,6 +191,7 @@ def compute_rnm(data_frame):
     :param data_frame:
     :return:
     """
+    print("compute ratio of nuclear material")
     # side_length = tile_size  # global
     # TODO: temporary, we're pretending patch is tile
     side_length = 2000  # either 2 or 4
@@ -201,8 +206,12 @@ def compute_rnm(data_frame):
 
 csv_file = 'input_demo.csv'
 readfile_demo(csv_file)
+
 df = pandas.read_csv(csv_file)
 compute_rnm(df)
+
 compute_intersection_demo()
+
 is_within_roi()
+
 detect_bright_spots()
