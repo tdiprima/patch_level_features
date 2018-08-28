@@ -2,14 +2,15 @@
 
 from __future__ import division
 from __future__ import print_function
+from shapely.geometry import Point
+from shapely.geometry import Polygon
+from shapely.geometry import box
 import sys
 import cv2
 import numpy as np
 import pandas
 import matplotlib.pyplot as plt
-from shapely.geometry import Point
-from shapely.geometry import Polygon
-from shapely.geometry import box
+plt.switch_backend('agg')
 
 # This program will take arguments:
 # slide_name
@@ -164,16 +165,20 @@ def detect_bright_spots():
     """
     # load the image, convert it to grayscale, and blur it
     image = cv2.imread('img/detect_bright_spots.png')
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (11, 11), 0)
-    # threshold the image to reveal light regions in the
-    # blurred image
-    # Pixel values p >= 200 are set to 255 (white)
-    # Pixel values < 200 are set to 0 (black).
-    thresh = cv2.threshold(blurred, 200, 255, cv2.THRESH_BINARY)[1]
-    # show the output image
-    cv2.imshow("Image", thresh)
-    cv2.waitKey(0)
+    try:
+        print(type(image))
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        blurred = cv2.GaussianBlur(gray, (11, 11), 0)
+        # threshold the image to reveal light regions in the
+        # blurred image
+        # Pixel values p >= 200 are set to 255 (white)
+        # Pixel values < 200 are set to 0 (black).
+        thresh = cv2.threshold(blurred, 200, 255, cv2.THRESH_BINARY)[1]
+        # show the output image
+        cv2.imshow("Image", thresh)
+        cv2.waitKey(0)
+    except Exception as ex:
+        print(ex)
 
 
 def compute_rnm(data_frame):
@@ -196,8 +201,8 @@ def compute_rnm(data_frame):
 
 csv_file = 'input_demo.csv'
 readfile_demo(csv_file)
-# df = pandas.read_csv(csv_file)
-# compute_rnm(df)
-# compute_intersection_demo()
-# is_within_roi()
-# detect_bright_spots()
+df = pandas.read_csv(csv_file)
+compute_rnm(df)
+compute_intersection_demo()
+is_within_roi()
+detect_bright_spots()
