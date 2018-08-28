@@ -13,6 +13,21 @@ import cv2
 import sys
 
 
+def show_output(img):
+    """
+    Show the output image
+    :param img:
+    :return:
+    """
+    try:
+        cv2.imshow("Image", img)
+        cv2.waitKey(0)
+    except cv2.error as err:
+        print('Cannot show the image', err)
+        exit(1)
+
+
+
 def susceptible_method(grayscale_img, orig_image):
     """
     Finds 1 pixel having largest intensity value.
@@ -64,17 +79,19 @@ def more_robust_method(grayscale_img, orig_image):
     cv2.waitKey(0)
 
 
-if not len(sys.argv) > 1:
-    print("USAGE:")
-    print("python bright.py --image images/retina.png --radius 41")
-    exit(1)
-
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-i", "--image", help="path to the image file")
 ap.add_argument("-r", "--radius", type=int,
                 help="radius of Gaussian blur; must be odd")
 args = vars(ap.parse_args())
+print(args)
+
+
+if not len(sys.argv) > 1:
+    program_name = sys.argv[0]
+    print('python ', program_name, ' --image images/retina.png --radius 41')
+    exit(1)
 
 # load the image and convert it to grayscale
 image = cv2.imread(args["image"])

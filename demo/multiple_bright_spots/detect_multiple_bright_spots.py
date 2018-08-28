@@ -18,8 +18,12 @@ def show_output(img):
     :param img:
     :return:
     """
-    cv2.imshow("Image", img)
-    cv2.waitKey(0)
+    try:
+        cv2.imshow("Image", img)
+        cv2.waitKey(0)
+    except cv2.error as err:
+        print('Cannot show the image', err)
+        exit(1)
 
 
 def grayscale_and_blur(m_image):

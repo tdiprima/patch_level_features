@@ -183,6 +183,7 @@ def detect_bright_spots():
         cv2.waitKey(0)
     except cv2.error as e:
         print("\nCan't display the image.\n", e)
+        exit(1)
 
 
 def compute_rnm(data_frame):
