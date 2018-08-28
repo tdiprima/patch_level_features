@@ -23,7 +23,7 @@ def show_output(name, img):
         cv2.imshow(name, img)
         cv2.waitKey(0)
     except cv2.error as err:
-        print('Cannot show the image', err)
+        print('\nCannot show the image.\n', err)
         exit(1)
 
 
@@ -84,6 +84,7 @@ print(args)
 
 if not len(sys.argv) > 1:
     program_name = sys.argv[0]
+    print("USAGE:")
     print('python ', program_name, ' --image images/retina.png --radius 41')
     exit(1)
 

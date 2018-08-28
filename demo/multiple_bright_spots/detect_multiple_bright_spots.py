@@ -22,7 +22,7 @@ def show_output(img):
         cv2.imshow("Image", img)
         cv2.waitKey(0)
     except cv2.error as err:
-        print('Cannot show the image', err)
+        print('\nCannot show the image.\n', err)
         exit(1)
 
 
@@ -120,8 +120,9 @@ def draw_labels(mask, m_image):
 
 # start
 if not len(sys.argv) > 1:
+    program_name = sys.argv[0]
     print("USAGE:")
-    print("python detect_bright_spots.py --image images/lights_01.png")
+    print('python ', program_name, ' --image images/lights_01.png')
     exit(1)
 
 # construct the argument parse and parse the arguments
