@@ -13,19 +13,18 @@ import cv2
 import sys
 
 
-def show_output(img):
+def show_output(name, img):
     """
     Show the output image
     :param img:
     :return:
     """
     try:
-        cv2.imshow("Image", img)
+        cv2.imshow(name, img)
         cv2.waitKey(0)
     except cv2.error as err:
         print('Cannot show the image', err)
         exit(1)
-
 
 
 def susceptible_method(grayscale_img, orig_image):
@@ -48,11 +47,7 @@ def susceptible_method(grayscale_img, orig_image):
     cv2.circle(orig_image, maxLoc, 5, (255, 0, 0), 2)
 
     # display the results of the naive attempt
-    cv2.imshow("Naive", orig_image)
-
-    # imshow() only works with waitKey():
-    # https://stackoverflow.com/questions/21810452/cv2-imshow-command-doesnt-work-properly-in-opencv-python
-    cv2.waitKey(0)
+    show_output('Naive', orig_image)
 
 
 def more_robust_method(grayscale_img, orig_image):
@@ -75,8 +70,7 @@ def more_robust_method(grayscale_img, orig_image):
     cv2.circle(image1, maxLoc, args["radius"], (255, 0, 0), 2)
 
     # display the results of our newly improved method
-    cv2.imshow("Robust", image1)
-    cv2.waitKey(0)
+    show_output('Robust', image1)
 
 
 # construct the argument parse and parse the arguments
