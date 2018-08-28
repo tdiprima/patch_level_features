@@ -19,6 +19,21 @@ def get_lines_with(input_str, substr):
     return lines
 
 
+def remove_substr(big_str, substr):
+    """
+    If you want to remove the string you're looking for,
+    use this on each line you get, in the get_lines_with function.
+    :param big_str:
+    :param substr:
+    :return:
+    """
+    if substr not in big_str:
+        return big_str
+    start_index = big_str.index(substr)
+    end_index = start_index + len(substr)
+    return big_str[:start_index] + big_str[end_index:]
+
+
 def txt_lines_with(fname, substr):
     """
     Get all lines in a .txt file containing a substring.
@@ -50,14 +65,4 @@ def filter_txt_lines_to(fname_in, substr, fname_out):
 
 
 # Add your file names and filter here
-filter_txt_lines_to("./source.txt", "this", "./dest.txt")
-
-
-# If you want to remove the string you're looking for, use this on each line you get, in the get_lines_with function.
-
-def remove_substr(big_str, substr):
-    if substr not in big_str:
-        return big_str
-    start_index = big_str.index(substr)
-    end_index = start_index + len(substr)
-    return big_str[:start_index] + big_str[end_index:]
+filter_txt_lines_to("./source.txt", "nulla", "./dest.txt")
