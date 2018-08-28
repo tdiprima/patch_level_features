@@ -1,6 +1,7 @@
 # conda env create -f environment.yml
 name: myenv
 dependencies:
+  - python=3.6.3
   - pymongo
   - numpy
   - pandas
