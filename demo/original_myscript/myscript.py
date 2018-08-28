@@ -169,8 +169,8 @@ def detect_bright_spots():
     # load the image, convert it to grayscale, and blur it
     print("detect_bright_spots")
     image = cv2.imread('img/detect_bright_spots.png')
+    thresh = {}
     try:
-        print(type(image))  # Should be <type 'numpy.ndarray'>
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         blurred = cv2.GaussianBlur(gray, (11, 11), 0)
         # threshold the image to reveal light regions in the
@@ -178,6 +178,11 @@ def detect_bright_spots():
         # Pixel values p >= 200 are set to 255 (white)
         # Pixel values < 200 are set to 0 (black).
         thresh = cv2.threshold(blurred, 200, 255, cv2.THRESH_BINARY)[1]
+        print(type(thresh))
+    except Exception as ex:
+        print(ex)
+
+    try:
         # show the output image
         cv2.imshow("Image", thresh)
         cv2.waitKey(0)
