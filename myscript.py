@@ -3,13 +3,21 @@ import sys
 import argparse
 import subprocess
 from pathlib import Path
-from pymongo import MongoClient
+from pymongo import MongoClient, errors
 
 
 def assure_path_exists(path):
     m_dir = os.path.dirname(path)
     if not os.path.exists(m_dir):
         os.makedirs(m_dir)
+
+
+def mongodb_connect(client_uri):
+    try:
+        return MongoClient(client_uri, serverSelectionTimeoutMS=1)
+    except errors.ConnectionFailure:
+        print("Failed to connect to server {}".format(client_uri))
+        exit(1)
 
 
 def get_file_list(substr, filepath):
@@ -58,14 +66,20 @@ def get_composite_exec_id():
     database for each image.
     :return:
     """
-    client = MongoClient('mongodb://' + args["db_host"] + ':27017')
-    db = client.quip_comp
-    coll = db.metadata
-    query = {"image.case_id": case_id,
-             "provenance.analysis_execution_id": {'$regex': 'composite_dataset', '$options': 'i'}}
-    item = coll.find_one(query)
-    client.close()
-    return item['provenance']['analysis_execution_id']
+    m_dict = {}
+    try:
+        client = mongodb_connect('mongodb://' + args["db_host"] + ':27017')
+        client.server_info()  # force connection, trigger error to be caught
+        db = client.quip_comp
+        coll = db.metadata
+        query = {"image.case_id": case_id,
+                 "provenance.analysis_execution_id": {'$regex': 'composite_dataset', '$options': 'i'}}
+        m_dict = coll.find_one(query)
+        client.close()
+    except errors.ServerSelectionTimeoutError as err:
+        print(err)
+        exit(1)
+    return m_dict['provenance']['analysis_execution_id']
 
 
 def get_tumor_markup():
@@ -74,6 +88,29 @@ def get_tumor_markup():
     :return:
     """
     execution_id = (user_name + "_Tumor_Region")
+    try:
+        client = mongodb_connect('mongodb://' + args["db_host"] + ':27017')
+        client.server_info()  # force connection, trigger error to be caught
+        db = client.quip
+        coll = db.objects
+        filter_q = {
+                    'provenance.image.case_id': case_id,
+                    'provenance.analysis.execution_id': execution_id
+                }
+        projection_q = {
+                    'geometry': 1,
+                    '_id': 0
+                }
+        m_dict = coll.find(filter_q, projection_q)
+        for item in m_dict:
+            print(item)
+        client.close()
+    except TypeError as err:
+        print(err)
+        exit(1)
+    except errors.ServerSelectionTimeoutError as err:
+        print(err)
+        exit(1)
 
 
 work_dir = "/data1/tdiprima/dataset"
@@ -101,4 +138,4 @@ work_dir = os.path.join(work_dir, case_id) + os.sep
 assure_path_exists(work_dir)
 rsync_data_src()
 composite_exec_id = get_composite_exec_id()
-print(composite_exec_id)
+get_tumor_markup()
