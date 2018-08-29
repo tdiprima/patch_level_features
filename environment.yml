@@ -3,6 +3,7 @@ name: myenv
 dependencies:
   python=3.6.3
   - cython
+  - math
   - matplotlib
   - numpy
   - opencv
