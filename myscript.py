@@ -189,6 +189,7 @@ def read_slide():
 
     tile_x = math.ceil(image_width / tile_size)
     tile_y = math.ceil(image_height / tile_size)
+    print(tile_x, tile_y)
 
     # Calculate stuff...
 
@@ -228,3 +229,6 @@ work_dir = os.path.join(work_dir, case_id) + os.sep
 
 # Get exec_id for polygons
 # composite_exec_id = get_composite_exec_id()
+
+# Read slide & process
+read_slide()
