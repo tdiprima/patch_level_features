@@ -174,6 +174,10 @@ def convert_to_polygons(markup_list):
 
 
 def read_slide():
+    """
+    Read slide and process
+    :return:
+    """
     tile_size = args["tile_size"]
     p = Path(os.path.join(work_dir, (case_id + '.svs')))
     osr = OpenSlide(str(p))
