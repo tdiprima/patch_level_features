@@ -6,6 +6,7 @@ dependencies:
   - matplotlib
   - numpy
   - opencv
+  - openslide-python
   - pandas
   - pymongo
   - scikit-image
