@@ -195,7 +195,6 @@ def read_slide():
     # Calculate stuff...
     for i in range(tile_x):
         for j in range(tile_y):
-            print("what")
             xpos = i * tile_size
             ypos = j * tile_size
             print(xpos, ypos)
