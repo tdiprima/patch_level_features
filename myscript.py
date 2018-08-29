@@ -2,6 +2,8 @@ import os
 import sys
 import argparse
 import subprocess
+from shapely.geometry import Polygon, Point
+from shapely.geometry import MultiPoint
 from pathlib import Path
 from pymongo import MongoClient, errors
 
@@ -106,7 +108,7 @@ def get_tumor_markup(m_caseid):
     Find what the pathologist circled as tumor.
     :return:
     """
-    m_list = []
+    tumor_markup_list = []
     execution_id = (user_name + "_Tumor_Region")
     try:
         client = mongodb_connect('mongodb://' + args["db_host"] + ':27017')
@@ -118,18 +120,48 @@ def get_tumor_markup(m_caseid):
                     'provenance.analysis.execution_id': execution_id
                 }
         projection_q = {
-                    'geometry': 1,
+                    'geometry.coordinates': 1,
                     '_id': 0
                 }
-        m_dict = coll.find(filter_q, projection_q)
-        for item in m_dict:
-            # TODO: do something
-            print(item)
+        print(filter_q, projection_q)
+        cursor = coll.find(filter_q, projection_q)
+        for item in cursor:
+            # geometry.coordinates happens to be a list with one thing in it: a list! (of point coordinates).
+            points = item["geometry"]["coordinates"][0]  # dictionary to list
+            tumor_markup_list.append(points)
         client.close()
     except errors.ServerSelectionTimeoutError as err:
         print(err)
         exit(1)
-    return m_list
+    print("count: ", len(tumor_markup_list))
+    return tumor_markup_list
+
+
+def convert_to_polygons(markup_list):
+    """
+    Given a list of lists of point coordinates,
+    convert the point coordinates to tuples
+    and create a Polygon.
+    Return list of polygons.
+    :param markup_list:
+    :return:
+    """
+    poly_list = []
+    try:
+        for coordinates in markup_list:
+            points_list = []
+
+            for point in coordinates:
+                point = Point(point[0], point[1])
+                points_list.append(point)
+            m = MultiPoint(points_list)
+            polygon = Polygon(m)
+            poly_list.append(polygon)
+    except Exception as ex:
+        print(ex)
+        exit(1)
+
+    return poly_list
 
 
 work_dir = "/data1/tdiprima/dataset"
@@ -161,6 +193,7 @@ work_dir = os.path.join(work_dir, case_id) + os.sep
 
 # Find what the pathologist circled as tumor
 tumor_mark = get_tumor_markup(case_id)
+tumor_mark = convert_to_polygons(tumor_mark)
 
 # Get exec_id for polygons
 # composite_exec_id = get_composite_exec_id()
