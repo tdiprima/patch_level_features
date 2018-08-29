@@ -186,14 +186,19 @@ def read_slide():
     # props.__getitem__('openslide.level[0].height')
     image_width = osr.dimensions[0]
     image_height = osr.dimensions[1]
+    osr.close()
 
     tile_x = math.ceil(image_width / tile_size)
     tile_y = math.ceil(image_height / tile_size)
     print(tile_x, tile_y)
 
     # Calculate stuff...
-
-    osr.close()
+    for i in range(tile_x):
+        for j in range(tile_y):
+            print("what")
+            xpos = i * tile_size
+            ypos = j * tile_size
+            print(xpos, ypos)
 
 
 work_dir = "/data1/tdiprima/dataset"
