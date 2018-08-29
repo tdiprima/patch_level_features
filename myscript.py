@@ -1,11 +1,12 @@
 import os
 import sys
 import argparse
+from openslide import (OpenSlide, OpenSlideError,
+        OpenSlideUnsupportedFormatError)
 import subprocess
-from shapely.geometry import Polygon, Point
-from shapely.geometry import MultiPoint
 from pathlib import Path
 from pymongo import MongoClient, errors
+from shapely.geometry import Polygon, Point, MultiPoint
 
 
 def assure_path_exists(path):
@@ -73,6 +74,7 @@ def copy_src_data(source_csv, source_svs, dest, m_caseid):
         print("executing " + ' '.join(m_args))
         subprocess.call(m_args)
 
+    # Get slide
     my_file = Path(os.path.join(dest, (m_caseid + '.svs')))
     if not my_file.is_file():
         svs_list = get_file_list(m_caseid, 'config/image_path.list')
@@ -139,23 +141,23 @@ def get_tumor_markup(m_caseid):
 
 def convert_to_polygons(markup_list):
     """
-    Given a list of lists of point coordinates,
-    convert the point coordinates to tuples
-    and create a Polygon.
-    Return list of polygons.
+    Clean up and convert to something we can use.
     :param markup_list:
     :return:
     """
     poly_list = []
     try:
+        # roll through our list of lists
         for coordinates in markup_list:
             points_list = []
-
+            # convert the point coordinates to Points
             for point in coordinates:
                 point = Point(point[0], point[1])
                 points_list.append(point)
+            # create a Polygon
             m = MultiPoint(points_list)
             polygon = Polygon(m)
+            # append to return-list
             poly_list.append(polygon)
     except Exception as ex:
         print(ex)
@@ -192,8 +194,12 @@ work_dir = os.path.join(work_dir, case_id) + os.sep
 # copy_src_data(csv_file_path, svs_image_path, work_dir, case_id)
 
 # Find what the pathologist circled as tumor
-tumor_mark = get_tumor_markup(case_id)
-tumor_mark = convert_to_polygons(tumor_mark)
+# tumor_mark_list = get_tumor_markup(case_id)
+# tumor_poly_list = convert_to_polygons(tumor_mark_list)
 
 # Get exec_id for polygons
 # composite_exec_id = get_composite_exec_id()
+
+p = Path(os.path.join(work_dir, (case_id + '.svs')))
+osr = OpenSlide(str(p))
+props = osr.properties
