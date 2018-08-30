@@ -195,7 +195,7 @@ def compute_rnm(data_frame):
     print("compute ratio of nuclear material")
     # side_length = tile_size  # global
     # TODO: temporary, we're pretending patch is tile
-    side_length = 2000  # either 2 or 4
+    side_length = 2048
     area_square = side_length * side_length
     # print "area_square: ", area_square
     total_polygon_area = data_frame['AreaInPixels'].sum()
