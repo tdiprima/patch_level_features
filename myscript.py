@@ -181,6 +181,11 @@ def get_unique_tile_list(local_img_folder, m_caseid):
     :param m_caseid:
     :return:
     """
+    image_width = str(0)
+    image_height = str(0)
+    tile_width = str(0)
+    tile_height = str(0)
+    
     prefix_list = get_file_list(m_caseid, 'config/csv_file_path.list')
     tile_min_point_list = []
     for prefix in prefix_list:
@@ -249,11 +254,6 @@ if not len(sys.argv) > 1:
 case_id = args["slide_name"]
 user_name = args["user_name"]
 SLIDE_DIR = os.path.join(WORK_DIR, case_id) + os.sep
-
-image_width = str(0)
-image_height = str(0)
-tile_width = str(0)
-tile_height = str(0)
 
 # Fetch data
 # assure_path_exists(SLIDE_DIR)
