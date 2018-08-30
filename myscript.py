@@ -1,10 +1,10 @@
 import os
 import sys
-import math
+import json
+
 import argparse
 import subprocess
-from openslide import (OpenSlide, OpenSlideError,
-        OpenSlideUnsupportedFormatError)
+
 from pathlib import Path
 from pymongo import MongoClient, errors
 from shapely.geometry import Polygon, Point, MultiPoint
@@ -119,13 +119,13 @@ def get_tumor_markup(m_caseid):
         db = client.quip
         coll = db.objects
         filter_q = {
-                    'provenance.image.case_id': m_caseid,
-                    'provenance.analysis.execution_id': execution_id
-                }
+            'provenance.image.case_id': m_caseid,
+            'provenance.analysis.execution_id': execution_id
+        }
         projection_q = {
-                    'geometry.coordinates': 1,
-                    '_id': 0
-                }
+            'geometry.coordinates': 1,
+            '_id': 0
+        }
         print(filter_q, projection_q)
         cursor = coll.find(filter_q, projection_q)
         for item in cursor:
@@ -173,36 +173,45 @@ def convert_to_polygons(markup_list):
     return poly_list
 
 
-def read_slide():
+def get_unique_tile_list(local_img_folder, m_caseid):
     """
-    Read slide and process
+    Get list of tile upper x, y from JSON files.
+    :param local_img_folder:
+    :param m_caseid:
     :return:
     """
-    tile_size = args["tile_size"]
-    p = Path(os.path.join(work_dir, (case_id + '.svs')))
-    osr = OpenSlide(str(p))
-    # props = osr.properties
-    # props.__getitem__('openslide.level[0].width')
-    # props.__getitem__('openslide.level[0].height')
-    image_width = osr.dimensions[0]
-    image_height = osr.dimensions[1]
-    osr.close()
+    prefix_list = get_file_list(m_caseid, 'config/csv_file_path.list')
+    tile_min_point_list = []
+    for prefix in prefix_list:
+        detail_local_folder = os.path.join(local_img_folder, prefix)
+        if os.path.isdir(detail_local_folder) and len(os.listdir(detail_local_folder)) > 0:
+            # Get list of JSON files we have to read
+            json_filename_list = [f for f in os.listdir(detail_local_folder) if f.endswith('.json')]
+            for json_filename in json_filename_list:
+                # Read each JSON file
+                with open(os.path.join(detail_local_folder, json_filename)) as f:
+                    # f = _io.TextIOWrapper
+                    data = json.load(f)
+                    # print('data', data)
+                    # Get point
+                    # point [67584, 45056]
+                    tile_minx = data["tile_minx"]
+                    tile_miny = data["tile_miny"]
+                    point = [tile_minx, tile_miny]
+                    tile_min_point_list.append(point)
+    # tmp_set {(67584, 45056)} etc.
+    tmp_set = set(map(tuple, tile_min_point_list))
+    # for n in tmp_set:
+    #     print(n)
+    # convert to {[67584, 45056]}
+    unique_tile_min_point_list = map(list, tmp_set)
+    return unique_tile_min_point_list
 
-    tile_x = math.ceil(image_width / tile_size)
-    tile_y = math.ceil(image_height / tile_size)
-    print(tile_x, tile_y)
 
-    # Calculate stuff...
-    for i in range(tile_x):
-        for j in range(tile_y):
-            xpos = i * tile_size
-            ypos = j * tile_size
-            print(xpos, ypos)
-
-
-work_dir = "/data1/tdiprima/dataset"
-csv_file_path = "nfs004:/data/shared/bwang/composite_dataset"
-svs_image_path = "nfs001:/data/shared/tcga_analysis/seer_data/images"
+# constant variables
+WORK_DIR = "/data1/tdiprima/dataset"
+CSV_FILE_PATH = "nfs004:/data/shared/bwang/composite_dataset"
+SVS_IMAGE_PATH = "nfs001:/data/shared/tcga_analysis/seer_data/images"
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
@@ -221,11 +230,11 @@ if not len(sys.argv) > 1:
 
 case_id = args["slide_name"]
 user_name = args["user_name"]
-work_dir = os.path.join(work_dir, case_id) + os.sep
+SLIDE_DIR = os.path.join(WORK_DIR, case_id) + os.sep
 
 # Fetch data
-# assure_path_exists(work_dir)
-# copy_src_data(csv_file_path, svs_image_path, work_dir, case_id)
+# assure_path_exists(SLIDE_DIR)
+# copy_src_data(csv_file_path, svs_image_path, SLIDE_DIR, case_id)
 
 # Find what the pathologist circled as tumor
 # tumor_mark_list = get_tumor_markup(case_id)
@@ -234,5 +243,6 @@ work_dir = os.path.join(work_dir, case_id) + os.sep
 # Get exec_id for polygons
 # composite_exec_id = get_composite_exec_id()
 
-# Read slide & process
-read_slide()
+map_obj = get_unique_tile_list(WORK_DIR, case_id)
+# for thing in map_obj:
+#     print(thing)
