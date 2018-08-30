@@ -173,18 +173,19 @@ def convert_to_polygons(markup_list):
     return poly_list
 
 
-def get_unique_tile_list(local_img_folder, m_caseid):
+def get_metadata(local_img_folder, m_caseid):
     """
-    TODO: Waitaminute...
+    Get slide w, h
+    Get tile w, h
     Get list of tile upper x, y from JSON files.
     :param local_img_folder:
     :param m_caseid:
     :return:
     """
-    image_width = str(0)
-    image_height = str(0)
-    tile_width = str(0)
-    tile_height = str(0)
+    m_imw = str(0)  # image width
+    m_imh = str(0)  # image height
+    m_tlw = str(0)  # tile width
+    m_tlh = str(0)  # tile height
     once = 0
 
     prefix_list = get_file_list(m_caseid, 'config/csv_file_path.list')
@@ -202,26 +203,26 @@ def get_unique_tile_list(local_img_folder, m_caseid):
 
                     if once == 0:
                         once = 1
-                        image_width = data["image_width"]
-                        image_height = data["image_height"]
-                        tile_width = data["tile_width"]
-                        tile_height = data["tile_height"]
+                        m_imw = data["m_imw"]
+                        m_imh = data["m_imh"]
+                        m_tlw = data["m_tlw"]
+                        m_tlh = data["m_tlh"]
 
-                    if image_width != data["image_width"] or image_height != data["image_height"]:
+                    if m_imw != data["m_imw"] or m_imh != data["m_imh"]:
                         print("DIFF IMG W/H")
-                        print(image_width, image_height)
+                        print(m_imw, m_imh)
                         exit(0)
 
-                    image_width = data["image_width"]
-                    image_height = data["image_height"]
+                    m_imw = data["m_imw"]
+                    m_imh = data["m_imh"]
 
-                    if tile_width != data["tile_width"] or tile_height != data["tile_height"]:
+                    if m_tlw != data["m_tlw"] or m_tlh != data["m_tlh"]:
                         print("DIFF TILE W/H")
-                        print(tile_width, tile_height)
+                        print(m_tlw, m_tlh)
                         exit(0)
 
-                    tile_width = data["tile_width"]
-                    tile_height = data["tile_height"]
+                    m_tlw = data["m_tlw"]
+                    m_tlh = data["m_tlh"]
 
                     # print('data', data)
                     # Get point
@@ -238,7 +239,7 @@ def get_unique_tile_list(local_img_folder, m_caseid):
     #     print(n)
     # convert to {[67584, 45056]}
     unique_tile_min_point_list = map(list, tmp_set)
-    return unique_tile_min_point_list
+    return m_imw, m_imh, m_tlw, m_tlh, unique_tile_min_point_list
 
 
 # constant variables
@@ -276,6 +277,6 @@ SLIDE_DIR = os.path.join(WORK_DIR, case_id) + os.sep
 # Get exec_id for polygons
 # composite_exec_id = get_composite_exec_id()
 
-map_obj = get_unique_tile_list(WORK_DIR, case_id)
+image_width, image_height, tile_width, tile_height, tile_coords_list = get_metadata(WORK_DIR, case_id)
 # for thing in map_obj:
 #     print(thing)
