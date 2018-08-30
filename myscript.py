@@ -185,7 +185,8 @@ def get_unique_tile_list(local_img_folder, m_caseid):
     image_height = str(0)
     tile_width = str(0)
     tile_height = str(0)
-    
+    once = 0
+
     prefix_list = get_file_list(m_caseid, 'config/csv_file_path.list')
     tile_min_point_list = []
     for prefix in prefix_list:
@@ -199,16 +200,25 @@ def get_unique_tile_list(local_img_folder, m_caseid):
                     # f = _io.TextIOWrapper
                     data = json.load(f)
 
+                    if once == 0:
+                        once = 1
+                        image_width = data["image_width"]
+                        image_height = data["image_height"]
+                        tile_width = data["tile_width"]
+                        tile_height = data["tile_height"]
+
                     if image_width != data["image_width"] or image_height != data["image_height"]:
                         print("DIFF IMG W/H")
                         print(image_width, image_height)
+                        exit(0)
 
                     image_width = data["image_width"]
                     image_height = data["image_height"]
 
                     if tile_width != data["tile_width"] or tile_height != data["tile_height"]:
                         print("DIFF TILE W/H")
-                        print(image_width, image_height)
+                        print(tile_width, tile_height)
+                        exit(0)
 
                     tile_width = data["tile_width"]
                     tile_height = data["tile_height"]
