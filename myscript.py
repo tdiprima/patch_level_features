@@ -175,6 +175,7 @@ def convert_to_polygons(markup_list):
 
 def get_unique_tile_list(local_img_folder, m_caseid):
     """
+    TODO: Waitaminute...
     Get list of tile upper x, y from JSON files.
     :param local_img_folder:
     :param m_caseid:
@@ -192,13 +193,30 @@ def get_unique_tile_list(local_img_folder, m_caseid):
                 with open(os.path.join(detail_local_folder, json_filename)) as f:
                     # f = _io.TextIOWrapper
                     data = json.load(f)
+
+                    if image_width != data["image_width"] or image_height != data["image_height"]:
+                        print("DIFF IMG W/H")
+                        print(image_width, image_height)
+
+                    image_width = data["image_width"]
+                    image_height = data["image_height"]
+
+                    if tile_width != data["tile_width"] or tile_height != data["tile_height"]:
+                        print("DIFF TILE W/H")
+                        print(image_width, image_height)
+
+                    tile_width = data["tile_width"]
+                    tile_height = data["tile_height"]
+
                     # print('data', data)
                     # Get point
                     # point [67584, 45056]
+
                     tile_minx = data["tile_minx"]
                     tile_miny = data["tile_miny"]
                     point = [tile_minx, tile_miny]
                     tile_min_point_list.append(point)
+
     # tmp_set {(67584, 45056)} etc.
     tmp_set = set(map(tuple, tile_min_point_list))
     # for n in tmp_set:
@@ -231,6 +249,11 @@ if not len(sys.argv) > 1:
 case_id = args["slide_name"]
 user_name = args["user_name"]
 SLIDE_DIR = os.path.join(WORK_DIR, case_id) + os.sep
+
+image_width = str(0)
+image_height = str(0)
+tile_width = str(0)
+tile_height = str(0)
 
 # Fetch data
 # assure_path_exists(SLIDE_DIR)
