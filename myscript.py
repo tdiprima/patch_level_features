@@ -173,9 +173,10 @@ def convert_to_polygons(markup_list):
 
 def get_polygon_data():
     """
-
+    Get all the polygons.
     :return:
     """
+    m_polygon_list = []
 
     for csv_dir1 in CSV_REL_PATHS:
         local = os.path.join(WORK_DIR, csv_dir1)
@@ -184,36 +185,42 @@ def get_polygon_data():
             for ff in feature_filename_list:
                 # Read each file
                 data_frame = pandas.read_csv(os.path.join(local, ff))
-                arr = string_to_polygon(data_frame, 'Polygon', 0)
-                print('arr', arr)
-                exit(0)
+                ply = string_to_polygon(data_frame['Polygon'])
+                if ply is not None:
+                    m_polygon_list.append(ply)
+
+    return m_polygon_list
 
 
-def string_to_polygon(data_frame, elem_name, idx):
+def string_to_polygon(poly_data):
     """
-    Convert Polygon string to array of float values
-    :param data_frame:
-    :param elem_name:
-    :param idx:
+    Convert Polygon string to polygon
+    :param poly_data:
     :return:
     """
-    str1 = data_frame[elem_name][idx]
-    str2 = ''
+    m_poly = []
+    m_polygon = None
 
-    if str1.startswith('[') and str1.endswith(']'):
-        str2 = str1[1:-1]  # slice first and last
+    tmp_str = str(poly_data)
+    tmp_str = tmp_str.replace('[', '')
+    tmp_str = tmp_str.replace(']', '')
+    split_str = tmp_str.split(':')
 
-    # split_str = tmp_str.split(':')
-    # for i in range(0, len(split_str) - 1, 2):
-    #     point = [float(split_str[i]) / float(image_width), float(split_str[i + 1]) / float(image_height)]
-    #     new_polygon.append(point)
-    # tmp_poly = [tuple(i) for i in new_polygon]
-    # computer_polygon0 = Polygon(tmp_poly)
+    try:
+        for i in range(0, len(split_str) - 1, 2):
+            point = [float(split_str[i]) / float(IMAGE_WIDTH), float(split_str[i + 1]) / float(IMAGE_HEIGHT)]
+            m_poly.append(point)
+            tmp_poly = [tuple(i) for i in m_poly]
+            m_polygon = Polygon(tmp_poly)
+            # np_arr = np.fromstring(str2, sep=':')
+            # for p in np_arr:
+            #     print(type(p))
+    except Exception as ex:
+        m_polygon = None
+        print('split_str', len(split_str))
+        print('Error in string_to_polygon', ex)
 
-    if str2 != '':
-        return np.fromstring(str2, dtype=float, sep=':')
-    else:
-        return None
+    return m_polygon
 
 
 def get_tile_metadata(local_folder):
@@ -326,7 +333,11 @@ tumor_mark_list = get_tumor_markup()
 # List of Tumor polygons
 tumor_poly_list = convert_to_polygons(tumor_mark_list)
 
-get_polygon_data()
+# Get image width and height.
+IMAGE_WIDTH, IMAGE_HEIGHT = get_image_metadata()
+
+polygon_list = get_polygon_data()
+print(len(polygon_list))
 
 # within = 0
 # intersects = 0
@@ -346,9 +357,6 @@ get_polygon_data()
 
 # Get exec_id for polygons.
 # composite_exec_id = get_composite_exec_id()
-
-# Get image width and height.
-# IMAGE_WIDTH, IMAGE_HEIGHT = get_image_metadata()
 
 # For processing slide later on
 # tile_width, tile_height, tile_minxy_list = get_tile_metadata(WORK_DIR)
