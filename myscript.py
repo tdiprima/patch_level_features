@@ -154,18 +154,18 @@ def convert_to_polygons(markup_list):
     :param markup_list:
     :return:
     """
-    poly_list = []
+    m_poly_list = []
     try:
         # roll through our list of lists
         for coordinates in markup_list:
-            polygon = point_to_poly(coordinates)
+            m_polygon = point_to_poly(coordinates)
             # append to return-list
-            poly_list.append(polygon)
+            poly_list.append(m_polygon)
     except Exception as ex:
         print(ex)
         exit(1)
 
-    return poly_list
+    return m_poly_list
 
 
 def point_to_poly(coordinates):
@@ -175,10 +175,12 @@ def point_to_poly(coordinates):
     :return:
     """
     points_list = []
-    for point in coordinates:
+    for m_point in coordinates:
         # convert the point coordinates to Points
-        point = Point(point[0], point[1])
-        points_list.append(point)
+        print(type(m_point), m_point)
+        if type(m_point) == 'list':
+            m_point1 = Point(m_point[0], m_point[1])
+            points_list.append(m_point1)
     # create a Polygon
     m = MultiPoint(points_list)
     return Polygon(m)
