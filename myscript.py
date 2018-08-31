@@ -158,14 +158,7 @@ def convert_to_polygons(markup_list):
     try:
         # roll through our list of lists
         for coordinates in markup_list:
-            points_list = []
-            # convert the point coordinates to Points
-            for point in coordinates:
-                point = Point(point[0], point[1])
-                points_list.append(point)
-            # create a Polygon
-            m = MultiPoint(points_list)
-            polygon = Polygon(m)
+            polygon = point_to_poly(coordinates)
             # append to return-list
             poly_list.append(polygon)
     except Exception as ex:
@@ -173,6 +166,22 @@ def convert_to_polygons(markup_list):
         exit(1)
 
     return poly_list
+
+
+def point_to_poly(coordinates):
+    """
+    Create a polygon from [x,y]
+    :param coordinates:
+    :return:
+    """
+    points_list = []
+    for point in coordinates:
+        # convert the point coordinates to Points
+        point = Point(point[0], point[1])
+        points_list.append(point)
+    # create a Polygon
+    m = MultiPoint(points_list)
+    return Polygon(m)
 
 
 def get_tile_metadata(local_img_folder, m_caseid):
@@ -276,8 +285,8 @@ SLIDE_DIR = os.path.join(WORK_DIR, case_id) + os.sep
 # copy_src_data(csv_file_path, svs_image_path, SLIDE_DIR, case_id)
 
 # Find what the pathologist circled as tumor
-# tumor_mark_list = get_tumor_markup(case_id)
-# tumor_poly_list = convert_to_polygons(tumor_mark_list)
+tumor_mark_list = get_tumor_markup(case_id)
+tumor_poly_list = convert_to_polygons(tumor_mark_list)
 
 # Get exec_id for polygons
 # composite_exec_id = get_composite_exec_id()
@@ -286,6 +295,24 @@ SLIDE_DIR = os.path.join(WORK_DIR, case_id) + os.sep
 # print(IMAGE_WIDTH, IMAGE_HEIGHT)
 
 tile_width, tile_height, tile_coords_list = get_tile_metadata(WORK_DIR, case_id)
-tile_poly_list = convert_to_polygons(tile_coords_list)
-for thing in tile_poly_list:
-    print(thing)
+poly_list = []
+for point in tile_coords_list:
+    p = point_to_poly(point)
+    poly_list.append(p)
+
+# Testing for now.
+within = 0
+intersects = 0
+disjoin = 0
+for tumor_roi in tumor_poly_list:
+    for polygon in poly_list:
+        if polygon.within(tumor_roi):
+            within += 1
+        if polygon.intersects(tumor_roi):
+            intersects += 1
+        if polygon.disjoint(tumor_roi):
+            disjoin += 1
+
+print('within', within)
+print('intersects', intersects)
+print('disjoin', disjoin)
