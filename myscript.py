@@ -4,6 +4,7 @@ import json
 import pandas
 import argparse
 import subprocess
+import numpy as np
 from pathlib import Path
 from pymongo import MongoClient, errors
 from shapely.geometry import Polygon, Point, MultiPoint
@@ -171,17 +172,48 @@ def convert_to_polygons(markup_list):
 
 
 def get_polygon_data():
+    """
+
+    :return:
+    """
 
     for csv_dir1 in CSV_REL_PATHS:
         local = os.path.join(WORK_DIR, csv_dir1)
         if os.path.isdir(local) and len(os.listdir(local)) > 0:
-            # Get list of JSON files we have to read
             feature_filename_list = [f for f in os.listdir(local) if f.endswith('features.csv')]
             for ff in feature_filename_list:
                 # Read each file
                 data_frame = pandas.read_csv(os.path.join(local, ff))
-                print('data_frame', data_frame)
+                arr = string_to_polygon(data_frame, 'Polygon', 0)
+                print('arr', arr)
                 exit(0)
+
+
+def string_to_polygon(data_frame, elem_name, idx):
+    """
+    Convert Polygon string to array of float values
+    :param data_frame:
+    :param elem_name:
+    :param idx:
+    :return:
+    """
+    str1 = data_frame[elem_name][idx]
+    str2 = ''
+
+    if str1.startswith('[') and str1.endswith(']'):
+        str2 = str1[1:-1]  # slice first and last
+
+    # split_str = tmp_str.split(':')
+    # for i in range(0, len(split_str) - 1, 2):
+    #     point = [float(split_str[i]) / float(image_width), float(split_str[i + 1]) / float(image_height)]
+    #     new_polygon.append(point)
+    # tmp_poly = [tuple(i) for i in new_polygon]
+    # computer_polygon0 = Polygon(tmp_poly)
+
+    if str2 != '':
+        return np.fromstring(str2, dtype=float, sep=':')
+    else:
+        return None
 
 
 def get_tile_metadata(local_folder):
