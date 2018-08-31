@@ -282,9 +282,10 @@ SLIDE_DIR = os.path.join(WORK_DIR, case_id) + os.sep
 # Get exec_id for polygons
 # composite_exec_id = get_composite_exec_id()
 
-# tile_width, tile_height, tile_coords_list = get_tile_metadata(WORK_DIR, case_id)
-# for thing in map_obj:
-#     print(thing)
+# IMAGE_WIDTH, IMAGE_HEIGHT = get_image_metadata(case_id)
+# print(IMAGE_WIDTH, IMAGE_HEIGHT)
 
-IMAGE_WIDTH, IMAGE_HEIGHT = get_image_metadata(case_id)
-print(IMAGE_WIDTH, IMAGE_HEIGHT)
+tile_width, tile_height, tile_coords_list = get_tile_metadata(WORK_DIR, case_id)
+tile_poly_list = convert_to_polygons(tile_coords_list)
+for thing in tile_poly_list:
+    print(thing)
