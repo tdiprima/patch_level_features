@@ -57,8 +57,6 @@ def get_file_list(substr, filepath):
 def copy_src_data(dest):
     """
     Copy data from nfs location to computation node.
-    :param source_csv:
-    :param source_svs:
     :param dest:
     :return:
     """
@@ -172,19 +170,25 @@ def convert_to_polygons(markup_list):
     return m_poly_list
 
 
-# def read_csv():
-#     data_frame = pandas.read_csv(filename)
-#
-#     for csv_dir1 in CSV_REL_PATHS:
-#         source_dir = os.path.join(source_csv, csv_dir1)
-#         # copy all *.json and *features.csv files
+def get_polygon_data():
+
+    for csv_dir1 in CSV_REL_PATHS:
+        local = os.path.join(WORK_DIR, csv_dir1)
+        if os.path.isdir(local) and len(os.listdir(local)) > 0:
+            # Get list of JSON files we have to read
+            feature_filename_list = [f for f in os.listdir(local) if f.endswith('features.csv')]
+            for ff in feature_filename_list:
+                # Read each file
+                data_frame = pandas.read_csv(os.path.join(local, ff))
+                print('data_frame', data_frame)
+                exit(0)
 
 
-def get_tile_metadata(local_img_folder):
+def get_tile_metadata(local_folder):
     """
     Get tile w, h
     Get list of tile upper x, y from JSON files.
-    :param local_img_folder:
+    :param local_folder:
     :return:
     """
     m_tlw = str(0)  # tile width
@@ -192,14 +196,17 @@ def get_tile_metadata(local_img_folder):
     once = 0
 
     tile_min_point_list = []
-    for m_dir in CSV_REL_PATHS:
-        detail_local_folder = os.path.join(local_img_folder, m_dir)
-        if os.path.isdir(detail_local_folder) and len(os.listdir(detail_local_folder)) > 0:
+
+    # Roll through the folders and JSON files for this case_id.
+    for csv_dir1 in CSV_REL_PATHS:
+        local = os.path.join(local_folder, csv_dir1)
+
+        if os.path.isdir(local) and len(os.listdir(local)) > 0:
             # Get list of JSON files we have to read
-            json_filename_list = [f for f in os.listdir(detail_local_folder) if f.endswith('.json')]
+            json_filename_list = [f for f in os.listdir(local) if f.endswith('.json')]
             for json_filename in json_filename_list:
                 # Read each JSON file
-                with open(os.path.join(detail_local_folder, json_filename)) as f:
+                with open(os.path.join(local, json_filename)) as f:
                     # f = _io.TextIOWrapper
                     data = json.load(f)
 
@@ -277,24 +284,18 @@ USER_NAME = args["user_name"]
 SLIDE_DIR = os.path.join(WORK_DIR, CASE_ID) + os.sep
 CSV_REL_PATHS = get_file_list(CASE_ID, 'config/csv_file_path.list')
 
-# Fetch data
-assure_path_exists(SLIDE_DIR)
-copy_src_data(SLIDE_DIR)
+# Fetch data.
+# assure_path_exists(SLIDE_DIR)
+# copy_src_data(SLIDE_DIR)
 
-# Find what the pathologist circled as tumor
+# Find what the pathologist circled as tumor.
 tumor_mark_list = get_tumor_markup()
+
 # List of Tumor polygons
 tumor_poly_list = convert_to_polygons(tumor_mark_list)
 
-# Get exec_id for polygons
-composite_exec_id = get_composite_exec_id()
+get_polygon_data()
 
-IMAGE_WIDTH, IMAGE_HEIGHT = get_image_metadata()
-# print(IMAGE_WIDTH, IMAGE_HEIGHT)
-
-tile_width, tile_height, tile_minxy_list = get_tile_metadata(WORK_DIR)
-
-# Testing for now.
 # within = 0
 # intersects = 0
 # disjoin = 0
@@ -310,3 +311,12 @@ tile_width, tile_height, tile_minxy_list = get_tile_metadata(WORK_DIR)
 # print('within', within)
 # print('intersects', intersects)
 # print('disjoin', disjoin)
+
+# Get exec_id for polygons.
+# composite_exec_id = get_composite_exec_id()
+
+# Get image width and height.
+# IMAGE_WIDTH, IMAGE_HEIGHT = get_image_metadata()
+
+# For processing slide later on
+# tile_width, tile_height, tile_minxy_list = get_tile_metadata(WORK_DIR)
