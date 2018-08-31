@@ -202,16 +202,16 @@ def get_tile_metadata(local_img_folder, m_caseid):
 
                     if once == 0:
                         once = 1
-                        m_tlw = data["m_tlw"]
-                        m_tlh = data["m_tlh"]
+                        m_tlw = data["tile_width"]
+                        m_tlh = data["tile_height"]
 
-                    if m_tlw != data["m_tlw"] or m_tlh != data["m_tlh"]:
+                    if m_tlw != data["tile_width"] or m_tlh != data["tile_height"]:
                         print("DIFF TILE W/H")
                         print(m_tlw, m_tlh)
                         exit(0)
 
-                    m_tlw = data["m_tlw"]
-                    m_tlh = data["m_tlh"]
+                    m_tlw = data["tile_width"]
+                    m_tlh = data["tile_height"]
 
                     # print('data', data)
                     # Get point
