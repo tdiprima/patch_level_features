@@ -178,17 +178,25 @@ def get_polygon_data():
     """
     m_polygon_list = []
 
-    for csv_dir1 in CSV_REL_PATHS:
-        local = os.path.join(WORK_DIR, csv_dir1)
-        if os.path.isdir(local) and len(os.listdir(local)) > 0:
-            feature_filename_list = [f for f in os.listdir(local) if f.endswith('features.csv')]
-            for ff in feature_filename_list:
-                # Read each file
-                data_frame = pandas.read_csv(os.path.join(local, ff))
-                val = data_frame['Polygon'].values[0]
-                ply = string_to_polygon(val)
-                if ply is not None:
+    try:
+        for csv_dir1 in CSV_REL_PATHS:
+            local = os.path.join(WORK_DIR, csv_dir1)
+            if os.path.isdir(local) and len(os.listdir(local)) > 0:
+                feature_filename_list = [f for f in os.listdir(local) if f.endswith('features.csv')]
+                for ff in feature_filename_list:
+                    # Read each file
+                    data_frame = pandas.read_csv(os.path.join(local, ff))
+                    df = pandas.DataFrame(data_frame)
+                    if df.empty:
+                        continue
+
+                    val = data_frame['Polygon'].values[0]
+                    ply = string_to_polygon(val)
                     m_polygon_list.append(ply)
+
+    except Exception as ex:
+        print('Error in get_polygon_data: ', ex)
+        exit(1)
 
     return m_polygon_list
 
@@ -199,11 +207,9 @@ def string_to_polygon(poly_data):
     :param poly_data:
     :return:
     """
-    m_poly = []
-    m_polygon = None
+    points_list = []
 
     tmp_str = str(poly_data)
-    print(tmp_str)
     tmp_str = tmp_str.replace('[', '')
     tmp_str = tmp_str.replace(']', '')
     split_str = tmp_str.split(':')
@@ -215,12 +221,11 @@ def string_to_polygon(poly_data):
             a = float(split_str[i])
             b = float(split_str[i + 1])
             point = [a / float(IMAGE_WIDTH), b / float(IMAGE_HEIGHT)]
-            m_poly.append(point)
-            tmp_poly = [tuple(i) for i in m_poly]
-            m_polygon = Polygon(tmp_poly)
-            # np_arr = np.fromstring(str2, sep=':')
-            # for p in np_arr:
-            #     print(type(p))
+            m_point = Point(point)
+            points_list.append(m_point)
+        # create a Polygon
+        m = MultiPoint(points_list)
+        m_polygon = Polygon(m)
     except Exception as ex:
         m_polygon = None
         print(a, b)
@@ -343,6 +348,7 @@ tumor_poly_list = convert_to_polygons(tumor_mark_list)
 
 # Get image width and height.
 IMAGE_WIDTH, IMAGE_HEIGHT = get_image_metadata()
+print(IMAGE_WIDTH, IMAGE_HEIGHT)
 
 polygon_list = get_polygon_data()
 print(len(polygon_list))
