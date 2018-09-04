@@ -185,7 +185,8 @@ def get_polygon_data():
             for ff in feature_filename_list:
                 # Read each file
                 data_frame = pandas.read_csv(os.path.join(local, ff))
-                ply = string_to_polygon(data_frame['Polygon'])
+                val = data_frame['Polygon'].values[0]
+                ply = string_to_polygon(val)
                 if ply is not None:
                     m_polygon_list.append(ply)
 
@@ -202,13 +203,18 @@ def string_to_polygon(poly_data):
     m_polygon = None
 
     tmp_str = str(poly_data)
+    print(tmp_str)
     tmp_str = tmp_str.replace('[', '')
     tmp_str = tmp_str.replace(']', '')
     split_str = tmp_str.split(':')
+    a = 0.0
+    b = 0.0
 
     try:
         for i in range(0, len(split_str) - 1, 2):
-            point = [float(split_str[i]) / float(IMAGE_WIDTH), float(split_str[i + 1]) / float(IMAGE_HEIGHT)]
+            a = float(split_str[i])
+            b = float(split_str[i + 1])
+            point = [a / float(IMAGE_WIDTH), b / float(IMAGE_HEIGHT)]
             m_poly.append(point)
             tmp_poly = [tuple(i) for i in m_poly]
             m_polygon = Polygon(tmp_poly)
@@ -217,8 +223,10 @@ def string_to_polygon(poly_data):
             #     print(type(p))
     except Exception as ex:
         m_polygon = None
-        print('split_str', len(split_str))
+        print(a, b)
+        print("strlen: ", len(split_str))
         print('Error in string_to_polygon', ex)
+        exit(1)
 
     return m_polygon
 
