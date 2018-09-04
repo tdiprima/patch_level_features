@@ -342,7 +342,7 @@ IMAGE_WIDTH, IMAGE_HEIGHT = get_image_metadata()
 print(IMAGE_WIDTH, IMAGE_HEIGHT)
 
 huge_list = get_polygon_data()
-# print('len huge_list: ', len(huge_list))
+print('len huge_list: ', len(huge_list))
 smaller_list = get_polygons_within_tumors(huge_list, tumor_poly_list)
 print('len smaller_list: ', len(smaller_list))
 del huge_list
