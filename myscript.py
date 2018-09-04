@@ -1,6 +1,9 @@
+import gc
 import os
 import sys
 import json
+import time
+
 import pandas
 import argparse
 import subprocess
@@ -173,10 +176,11 @@ def convert_to_polygons(markup_list):
 
 def get_polygon_data():
     """
-    Get all the polygons.
+    Get all the things.
     :return:
     """
-    m_polygon_list = []
+    ret_list = []
+    start_time = time.time()
 
     try:
         for csv_dir1 in CSV_REL_PATHS:
@@ -186,19 +190,22 @@ def get_polygon_data():
                 for ff in feature_filename_list:
                     # Read each file
                     data_frame = pandas.read_csv(os.path.join(local, ff))
-                    df = pandas.DataFrame(data_frame)
-                    if df.empty:
+                    # df = pandas.DataFrame(data_frame)
+                    if data_frame.empty:
                         continue
-
-                    val = data_frame['Polygon'].values[0]
-                    ply = string_to_polygon(val)
-                    m_polygon_list.append(ply)
+                    ret_list.append(data_frame)
+                    # val = data_frame['Polygon'].values[0]
+                    # ply = string_to_polygon(val)
+                    # ret_list.append(ply)
 
     except Exception as ex:
         print('Error in get_polygon_data: ', ex)
         exit(1)
 
-    return m_polygon_list
+    elapsed_time = time.time() - start_time
+    time.strftime("%H:%M:%S", time.gmtime(elapsed_time))
+
+    return ret_list
 
 
 def string_to_polygon(poly_data):
@@ -235,64 +242,6 @@ def string_to_polygon(poly_data):
         exit(1)
 
     return m_polygon
-
-
-def get_tile_metadata(local_folder):
-    """
-    Get tile w, h
-    Get list of tile upper x, y from JSON files.
-    :param local_folder:
-    :return:
-    """
-    m_tlw = str(0)  # tile width
-    m_tlh = str(0)  # tile height
-    once = 0
-
-    tile_min_point_list = []
-
-    # Roll through the folders and JSON files for this case_id.
-    for csv_dir1 in CSV_REL_PATHS:
-        local = os.path.join(local_folder, csv_dir1)
-
-        if os.path.isdir(local) and len(os.listdir(local)) > 0:
-            # Get list of JSON files we have to read
-            json_filename_list = [f for f in os.listdir(local) if f.endswith('.json')]
-            for json_filename in json_filename_list:
-                # Read each JSON file
-                with open(os.path.join(local, json_filename)) as f:
-                    # f = _io.TextIOWrapper
-                    data = json.load(f)
-
-                    if once == 0:
-                        once = 1
-                        m_tlw = data["tile_width"]
-                        m_tlh = data["tile_height"]
-
-                    if m_tlw != data["tile_width"] or m_tlh != data["tile_height"]:
-                        print("DIFF TILE W/H")
-                        print(m_tlw, m_tlh)
-                        exit(0)
-
-                    m_tlw = data["tile_width"]
-                    m_tlh = data["tile_height"]
-
-                    # print('data', data)
-                    # Get point
-                    # point [67584, 45056]
-                    # data[analysis_id]
-
-                    tile_minx = data["tile_minx"]
-                    tile_miny = data["tile_miny"]
-                    m_point = [tile_minx, tile_miny]
-                    tile_min_point_list.append(m_point)
-
-    # tmp_set {(67584, 45056)} etc.
-    tmp_set = set(map(tuple, tile_min_point_list))
-    # for n in tmp_set:
-    #     print(n)
-    # convert to {[67584, 45056]}
-    unique_tile_min_point_list = map(list, tmp_set)
-    return m_tlw, m_tlh, unique_tile_min_point_list
 
 
 def get_image_metadata():
@@ -351,26 +300,34 @@ tumor_poly_list = convert_to_polygons(tumor_mark_list)
 IMAGE_WIDTH, IMAGE_HEIGHT = get_image_metadata()
 print(IMAGE_WIDTH, IMAGE_HEIGHT)
 
-polygon_list = get_polygon_data()
-print('polygon_list len: ', len(polygon_list))
+# polygon_list = get_polygon_data()
+# print('polygon_list len: ', len(polygon_list))
 
-within = 0
-intersects = 0
-disjoin = 0
-for tumor_roi in tumor_poly_list:
-    for polygon in polygon_list:
-        if polygon.within(tumor_roi):
-            within += 1
-        if polygon.intersects(tumor_roi):
-            intersects += 1
-        if polygon.disjoint(tumor_roi):
-            disjoin += 1
-print('within', within)
-print('intersects', intersects)
-print('disjoin', disjoin)
+list_of_dataframes = get_polygon_data()
+print('len: ', len(list_of_dataframes))
+
+del list_of_dataframes
+gc.collect()
+
+# within = 0
+# intersects = 0
+# disjoin = 0
+# for tumor_roi in tumor_poly_list:
+#     for polygon in polygon_list:
+#         if polygon.within(tumor_roi):
+#             within += 1
+#         if polygon.intersects(tumor_roi):
+#             intersects += 1
+#         if polygon.disjoint(tumor_roi):
+#             disjoin += 1
+# print('within', within)
+# print('intersects', intersects)
+# print('disjoin', disjoin)
 
 # Get exec_id for polygons.
 # composite_exec_id = get_composite_exec_id()
 
 # For processing slide later on
 # tile_width, tile_height, tile_minxy_list = get_tile_metadata(WORK_DIR)
+
+exit(0)
