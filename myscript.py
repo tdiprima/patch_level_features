@@ -3,6 +3,7 @@ import os
 import sys
 import json
 import time
+from typing import Optional
 
 import pandas
 import argparse
@@ -190,10 +191,12 @@ def get_polygon_data():
                 for ff in feature_filename_list:
                     # Read each file
                     data_frame = pandas.read_csv(os.path.join(local, ff))
-                    # df = pandas.DataFrame(data_frame)
+                    # Skip if file is empty
                     if data_frame.empty:
                         continue
+                    # Return list of data frames
                     ret_list.append(data_frame)
+                    # Return list of polygons
                     # val = data_frame['Polygon'].values[0]
                     # ply = string_to_polygon(val)
                     # ret_list.append(ply)
@@ -203,7 +206,8 @@ def get_polygon_data():
         exit(1)
 
     elapsed_time = time.time() - start_time
-    time.strftime("%H:%M:%S", time.gmtime(elapsed_time))
+    print('Runtime get_polygon_data: ')
+    print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
     return ret_list
 
@@ -260,6 +264,43 @@ def get_image_metadata():
     return image_width, image_height
 
 
+def get_polygons_within_tumors(data_frames, tumor_poly_list):
+    """
+
+    :param data_frames:
+    :param tumor_poly_list:
+    :return:
+    """
+    start_time = time.time()
+    rtn_list = []
+
+    within = 0
+    intersects = 0
+    disjoin = 0
+    for tumor_roi in tumor_poly_list:
+        for df in data_frames:
+            val = df['Polygon'].values[0]
+            poly = string_to_polygon(val)
+            if poly.within(tumor_roi):
+                rtn_list.append(df)
+                within += 1
+            elif poly.intersects(tumor_roi):
+                rtn_list.append(df)
+                intersects += 1
+            elif poly.disjoint(tumor_roi):
+                disjoin += 1
+
+    print('within', within)
+    print('intersects', intersects)
+    print('disjoin', disjoin)
+
+    elapsed_time = time.time() - start_time
+    print('Runtime get_polygon_data: ')
+    print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
+
+    return rtn_list
+
+
 # constant variables
 WORK_DIR = "/data1/tdiprima/dataset"
 CSV_FILE_PATH = "nfs004:/data/shared/bwang/composite_dataset"
@@ -300,29 +341,12 @@ tumor_poly_list = convert_to_polygons(tumor_mark_list)
 IMAGE_WIDTH, IMAGE_HEIGHT = get_image_metadata()
 print(IMAGE_WIDTH, IMAGE_HEIGHT)
 
-# polygon_list = get_polygon_data()
-# print('polygon_list len: ', len(polygon_list))
-
-list_of_dataframes = get_polygon_data()
-print('len: ', len(list_of_dataframes))
-
-del list_of_dataframes
+huge_list = get_polygon_data()
+# print('len huge_list: ', len(huge_list))
+smaller_list = get_polygons_within_tumors(huge_list, tumor_poly_list)
+print('len smaller_list: ', len(smaller_list))
+del huge_list
 gc.collect()
-
-# within = 0
-# intersects = 0
-# disjoin = 0
-# for tumor_roi in tumor_poly_list:
-#     for polygon in polygon_list:
-#         if polygon.within(tumor_roi):
-#             within += 1
-#         if polygon.intersects(tumor_roi):
-#             intersects += 1
-#         if polygon.disjoint(tumor_roi):
-#             disjoin += 1
-# print('within', within)
-# print('intersects', intersects)
-# print('disjoin', disjoin)
 
 # Get exec_id for polygons.
 # composite_exec_id = get_composite_exec_id()
