@@ -220,10 +220,11 @@ def string_to_polygon(poly_data):
         for i in range(0, len(split_str) - 1, 2):
             a = float(split_str[i])
             b = float(split_str[i + 1])
+            # Normalize points
             point = [a / float(IMAGE_WIDTH), b / float(IMAGE_HEIGHT)]
             m_point = Point(point)
             points_list.append(m_point)
-        # create a Polygon
+        # Create a Polygon
         m = MultiPoint(points_list)
         m_polygon = Polygon(m)
     except Exception as ex:
@@ -351,23 +352,22 @@ IMAGE_WIDTH, IMAGE_HEIGHT = get_image_metadata()
 print(IMAGE_WIDTH, IMAGE_HEIGHT)
 
 polygon_list = get_polygon_data()
-print(len(polygon_list))
+print('polygon_list len: ', len(polygon_list))
 
-# within = 0
-# intersects = 0
-# disjoin = 0
-# for tumor_roi in tumor_poly_list:
-#     for polygon in poly_list:
-#         if polygon.within(tumor_roi):
-#             within += 1
-#         if polygon.intersects(tumor_roi):
-#             intersects += 1
-#         if polygon.disjoint(tumor_roi):
-#             disjoin += 1
-#
-# print('within', within)
-# print('intersects', intersects)
-# print('disjoin', disjoin)
+within = 0
+intersects = 0
+disjoin = 0
+for tumor_roi in tumor_poly_list:
+    for polygon in polygon_list:
+        if polygon.within(tumor_roi):
+            within += 1
+        if polygon.intersects(tumor_roi):
+            intersects += 1
+        if polygon.disjoint(tumor_roi):
+            disjoin += 1
+print('within', within)
+print('intersects', intersects)
+print('disjoin', disjoin)
 
 # Get exec_id for polygons.
 # composite_exec_id = get_composite_exec_id()
