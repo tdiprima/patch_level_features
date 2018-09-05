@@ -2,7 +2,7 @@ import os
 import json
 import pandas
 
-path = ''
+path = '.'
 filenames = os.listdir(path)  # get all files' and folders' names in directory
 
 folders = []
