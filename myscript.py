@@ -175,7 +175,7 @@ def convert_to_polygons(markup_list):
     return m_poly_list
 
 
-def get_polygon_data():
+def read_data():
     """
     Get all the things.
     :return:
@@ -202,11 +202,11 @@ def get_polygon_data():
                     # ret_list.append(ply)
 
     except Exception as ex:
-        print('Error in get_polygon_data: ', ex)
+        print('Error in read_data: ', ex)
         exit(1)
 
     elapsed_time = time.time() - start_time
-    print('Runtime get_polygon_data: ')
+    print('Runtime read_data: ')
     print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
     return ret_list
@@ -295,7 +295,7 @@ def get_polygons_within_tumors(data_frames, tumor_poly_list):
     print('disjoin', disjoin)
 
     elapsed_time = time.time() - start_time
-    print('Runtime get_polygon_data: ')
+    print('Runtime get_polygons_within_tumors: ')
     print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
     return rtn_list
@@ -341,7 +341,7 @@ tumor_poly_list = convert_to_polygons(tumor_mark_list)
 IMAGE_WIDTH, IMAGE_HEIGHT = get_image_metadata()
 print(IMAGE_WIDTH, IMAGE_HEIGHT)
 
-huge_list = get_polygon_data()
+huge_list = read_data()
 print('len huge_list: ', len(huge_list))
 smaller_list = get_polygons_within_tumors(huge_list, tumor_poly_list)
 print('len smaller_list: ', len(smaller_list))
