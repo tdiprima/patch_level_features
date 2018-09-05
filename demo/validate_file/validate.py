@@ -32,24 +32,42 @@ print('csv_files: ', len(csv_files))
 json_files.sort()
 csv_files.sort()
 
-for n, jfile in enumerate(json_files):
-    with open(jfile, 'r') as f:
-        print(n)
-        # Read JSON data into the dict1 variable
-        dict1 = json.load(f)
-        str = dict1['out_file_prefix']
-        print(str)
-        cfile = csv_files[n]
-        print(cfile)
 
-        if str not in cfile:
-            print('There should be 1 json file for 1 csv file.')
-            exit(1)
-        else:
-            print('All good.')
+def check_1_to_1():
+    for n, jfile in enumerate(json_files):
+        with open(jfile, 'r') as f:
+            # Read JSON data into the dict1 variable
+            dict1 = json.load(f)
+            str = dict1['out_file_prefix']
+            cfile = csv_files[n]
 
-        # Read CSV data into the dataframe variable
-        df = pandas.read_csv(cfile)
-        print('Perimeter', df['Perimeter'])
-    f.close()
+            if str not in cfile:
+                print('There should be 1 json file for 1 csv file.')
+                exit(1)
+
+            # Read CSV data into the dataframe variable
+            df = pandas.read_csv(cfile)
+            print('Perimeter', df['Perimeter'])
+        f.close()
+
+
+def check_dims():
+
+    for n, jfile in enumerate(json_files):
+        with open(jfile, 'r') as f:
+            print(f.name)
+            # Read JSON data into the dict1 variable
+            dict1 = json.load(f)
+            if dict1['patch_minx'] != dict1['tile_minx']:
+                print('minx')
+            if dict1['patch_miny'] != dict1['tile_miny']:
+                print('miny')
+            if dict1['patch_width'] != dict1['tile_width']:
+                print('width')
+            if dict1['patch_height'] != dict1['tile_height']:
+                print('height')
+        f.close()
+
+
+check_dims()
 
