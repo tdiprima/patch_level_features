@@ -37,6 +37,7 @@ if f1:
     with open(f1, 'r') as f:
         dict1 = json.load(f)
         print(dict1)
+    f.close()
 
 # Read CSV data into the dataframe variable
 print(f2)
