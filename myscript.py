@@ -3,7 +3,6 @@ import os
 import sys
 import json
 import time
-from typing import Optional
 
 import pandas
 import argparse
@@ -341,12 +340,12 @@ tumor_poly_list = convert_to_polygons(tumor_mark_list)
 IMAGE_WIDTH, IMAGE_HEIGHT = get_image_metadata()
 print(IMAGE_WIDTH, IMAGE_HEIGHT)
 
-huge_list = read_data()
-print('len huge_list: ', len(huge_list))
-smaller_list = get_polygons_within_tumors(huge_list, tumor_poly_list)
-print('len smaller_list: ', len(smaller_list))
-del huge_list
-gc.collect()
+# huge_list = read_data()
+# print('len huge_list: ', len(huge_list))
+# smaller_list = get_polygons_within_tumors(huge_list, tumor_poly_list)
+# print('len smaller_list: ', len(smaller_list))
+# del huge_list
+# gc.collect()
 
 # Get exec_id for polygons.
 # composite_exec_id = get_composite_exec_id()
