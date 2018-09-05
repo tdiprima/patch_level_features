@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
-from openslide import (OpenSlide, OpenSlideError,
-                       OpenSlideUnsupportedFormatError)
+
+from openslide import (OpenSlide)
 
 
 def get_image_metadata():
@@ -26,4 +26,3 @@ CASE_ID = ''
 # Get image width and height.
 # IMAGE_WIDTH, IMAGE_HEIGHT = get_image_metadata()
 # print(IMAGE_WIDTH, IMAGE_HEIGHT)
-

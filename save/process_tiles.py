@@ -1,8 +1,8 @@
-from pathlib import Path
-from openslide import (OpenSlide, OpenSlideError,
-                       OpenSlideUnsupportedFormatError)
 import math
 import os
+from pathlib import Path
+
+from openslide import (OpenSlide)
 
 
 def process_tiles(m_caseid):
@@ -40,7 +40,5 @@ args = []
 case_id = ''
 SLIDE_DIR = ''
 
-
 # Read slide & process
 process_tiles(case_id)
-

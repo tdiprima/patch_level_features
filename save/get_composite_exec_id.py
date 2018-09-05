@@ -36,6 +36,7 @@ def mongodb_connect(client_uri):
         exit(1)
 
 
+args = []
+CASE_ID = ''
 # Get exec_id for polygons.
 # composite_exec_id = get_composite_exec_id()
-
