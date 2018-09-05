@@ -2,7 +2,7 @@ import os
 import json
 import pandas
 
-path = '.'
+path = '/data1/tdiprima/dataset/PC_051_0_1'
 filenames = os.listdir(path)  # get all files' and folders' names in directory
 
 folders = []
@@ -28,20 +28,28 @@ for index, filename in enumerate(folders):
 
 print('json_files: ', len(json_files))
 print('csv_files: ', len(csv_files))
-f1 = json_files[0]
-f2 = csv_files[0]
 
-# Read JSON data into the dict1 variable
-print(f1)
-if f1:
-    with open(f1, 'r') as f:
+json_files.sort()
+csv_files.sort()
+
+for n, jfile in enumerate(json_files):
+    with open(jfile, 'r') as f:
+        print(n)
+        # Read JSON data into the dict1 variable
         dict1 = json.load(f)
-        print(dict1)
-    f.close()
+        str = dict1['out_file_prefix']
+        print(str)
+        cfile = csv_files[n]
+        print(cfile)
 
-# Read CSV data into the dataframe variable
-print(f2)
-if f2:
-    df = pandas.read_csv(f2)
-    print(df)
+        if str not in cfile:
+            print('There should be 1 json file for 1 csv file.')
+            exit(1)
+        else:
+            print('All good.')
+
+        # Read CSV data into the dataframe variable
+        df = pandas.read_csv(cfile)
+        print('Perimeter', df['Perimeter'])
+    f.close()
 
