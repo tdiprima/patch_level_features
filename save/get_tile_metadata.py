@@ -62,3 +62,7 @@ def get_tile_metadata(local_folder):
     unique_tile_min_point_list = map(list, tmp_set)
     return m_tlw, m_tlh, unique_tile_min_point_list
 
+
+# For processing slide later on
+# tile_width, tile_height, tile_minxy_list = get_tile_metadata(WORK_DIR)
+

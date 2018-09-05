@@ -1,18 +1,11 @@
-import gc
-import os
-import sys
-import json
-import time
-
-import pandas
 import argparse
+import os
 import subprocess
-import numpy as np
+import sys
 from pathlib import Path
+
 from pymongo import MongoClient, errors
 from shapely.geometry import Polygon, Point, MultiPoint
-from openslide import (OpenSlide, OpenSlideError,
-                       OpenSlideUnsupportedFormatError)
 
 
 def assure_path_exists(path):
@@ -84,28 +77,6 @@ def copy_src_data(dest):
         subprocess.check_call(['scp', svs_path, dest])
 
 
-def get_composite_exec_id():
-    """
-    There is only one composite dataset (unique execution_id) in quip_comp
-    database for each image.
-    :return:
-    """
-    m_dict = {}
-    try:
-        client = mongodb_connect('mongodb://' + args["db_host"] + ':27017')
-        client.server_info()  # force connection, trigger error to be caught
-        db = client.quip_comp
-        coll = db.metadata
-        query = {"image.case_id": CASE_ID,
-                 "provenance.analysis_execution_id": {'$regex': 'composite_dataset', '$options': 'i'}}
-        m_dict = coll.find_one(query)
-        client.close()
-    except errors.ServerSelectionTimeoutError as err:
-        print('Error in get_composite_exec_id', err)
-        exit(1)
-    return m_dict['provenance']['analysis_execution_id']
-
-
 def get_tumor_markup():
     """
     Find what the pathologist circled as tumor.
@@ -174,44 +145,7 @@ def convert_to_polygons(markup_list):
     return m_poly_list
 
 
-def read_data():
-    """
-    Get all the things.
-    :return:
-    """
-    ret_list = []
-    start_time = time.time()
-
-    try:
-        for csv_dir1 in CSV_REL_PATHS:
-            local = os.path.join(WORK_DIR, csv_dir1)
-            if os.path.isdir(local) and len(os.listdir(local)) > 0:
-                feature_filename_list = [f for f in os.listdir(local) if f.endswith('features.csv')]
-                for ff in feature_filename_list:
-                    # Read each file
-                    data_frame = pandas.read_csv(os.path.join(local, ff))
-                    # Skip if file is empty
-                    if data_frame.empty:
-                        continue
-                    # Return list of data frames
-                    ret_list.append(data_frame)
-                    # Return list of polygons
-                    # val = data_frame['Polygon'].values[0]
-                    # ply = string_to_polygon(val)
-                    # ret_list.append(ply)
-
-    except Exception as ex:
-        print('Error in read_data: ', ex)
-        exit(1)
-
-    elapsed_time = time.time() - start_time
-    print('Runtime read_data: ')
-    print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
-
-    return ret_list
-
-
-def string_to_polygon(poly_data):
+def string_to_polygon(poly_data, image_width, image_height):
     """
     Convert Polygon string to polygon
     :param poly_data:
@@ -223,81 +157,57 @@ def string_to_polygon(poly_data):
     tmp_str = tmp_str.replace('[', '')
     tmp_str = tmp_str.replace(']', '')
     split_str = tmp_str.split(':')
-    a = 0.0
-    b = 0.0
+    m_polygon = {}
 
     try:
+        # Get list of points
         for i in range(0, len(split_str) - 1, 2):
             a = float(split_str[i])
             b = float(split_str[i + 1])
             # Normalize points
-            point = [a / float(IMAGE_WIDTH), b / float(IMAGE_HEIGHT)]
+            point = [a / float(image_width), b / float(image_height)]
             m_point = Point(point)
             points_list.append(m_point)
         # Create a Polygon
         m = MultiPoint(points_list)
         m_polygon = Polygon(m)
     except Exception as ex:
-        m_polygon = None
-        print(a, b)
-        print("strlen: ", len(split_str))
         print('Error in string_to_polygon', ex)
         exit(1)
 
     return m_polygon
 
 
-def get_image_metadata():
-    """
-    Read slide and process
-    :return:
-    """
-    p = Path(os.path.join(SLIDE_DIR, (CASE_ID + '.svs')))
-    osr = OpenSlide(str(p))
-    # props = osr.properties
-    # props.__getitem__('openslide.level[0].width')
-    # props.__getitem__('openslide.level[0].height')
-    image_width = osr.dimensions[0]
-    image_height = osr.dimensions[1]
-    osr.close()
-    return image_width, image_height
+def get_data_files():
+    filenames = os.listdir(SLIDE_DIR)  # get all files' and folders' names in directory
 
+    folders = []
+    for filename in filenames:  # loop through all the files and folders
+        ppath = os.path.join(os.path.abspath(SLIDE_DIR), filename)
+        if os.path.isdir(ppath):  # check whether the current object is a folder or not
+            folders.append(ppath)
 
-def get_polygons_within_tumors(data_frames, tumor_poly_list):
-    """
+    folders.sort()
+    print('subfolders: ', len(folders))
 
-    :param data_frames:
-    :param tumor_poly_list:
-    :return:
-    """
-    start_time = time.time()
-    rtn_list = []
+    json_files = []
+    csv_files = []
+    for index, filename in enumerate(folders):
+        # print(index, filename)
+        files = os.listdir(filename)
+        for name in files:
+            ppath = os.path.join(os.path.abspath(filename), name)
+            if name.endswith('json'):
+                json_files.append(ppath)
+            elif name.endswith('csv'):
+                csv_files.append(ppath)
 
-    within = 0
-    intersects = 0
-    disjoin = 0
-    for tumor_roi in tumor_poly_list:
-        for df in data_frames:
-            val = df['Polygon'].values[0]
-            poly = string_to_polygon(val)
-            if poly.within(tumor_roi):
-                rtn_list.append(df)
-                within += 1
-            elif poly.intersects(tumor_roi):
-                rtn_list.append(df)
-                intersects += 1
-            elif poly.disjoint(tumor_roi):
-                disjoin += 1
+    print('json_files: ', len(json_files))
+    print('csv_files: ', len(csv_files))
 
-    print('within', within)
-    print('intersects', intersects)
-    print('disjoin', disjoin)
-
-    elapsed_time = time.time() - start_time
-    print('Runtime get_polygons_within_tumors: ')
-    print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
-
-    return rtn_list
+    json_files.sort()
+    csv_files.sort()
+    return json_files, csv_files
 
 
 # constant variables
@@ -327,8 +237,8 @@ SLIDE_DIR = os.path.join(WORK_DIR, CASE_ID) + os.sep
 CSV_REL_PATHS = get_file_list(CASE_ID, 'config/csv_file_path.list')
 
 # Fetch data.
-# assure_path_exists(SLIDE_DIR)
-# copy_src_data(SLIDE_DIR)
+assure_path_exists(SLIDE_DIR)
+copy_src_data(SLIDE_DIR)
 
 # Find what the pathologist circled as tumor.
 tumor_mark_list = get_tumor_markup()
@@ -336,21 +246,7 @@ tumor_mark_list = get_tumor_markup()
 # List of Tumor polygons
 tumor_poly_list = convert_to_polygons(tumor_mark_list)
 
-# Get image width and height.
-IMAGE_WIDTH, IMAGE_HEIGHT = get_image_metadata()
-print(IMAGE_WIDTH, IMAGE_HEIGHT)
-
-# huge_list = read_data()
-# print('len huge_list: ', len(huge_list))
-# smaller_list = get_polygons_within_tumors(huge_list, tumor_poly_list)
-# print('len smaller_list: ', len(smaller_list))
-# del huge_list
-# gc.collect()
-
-# Get exec_id for polygons.
-# composite_exec_id = get_composite_exec_id()
-
-# For processing slide later on
-# tile_width, tile_height, tile_minxy_list = get_tile_metadata(WORK_DIR)
+# Fetch list of data files
+JSON_FILES, CSV_FILES = get_data_files()
 
 exit(0)
