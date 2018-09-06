@@ -47,7 +47,10 @@ def check_1_to_1():
 
             # Read CSV data into the dataframe variable
             df = pandas.read_csv(cfile)
-            print('Perimeter', df['Perimeter'])
+            p = df['Polygon'].values[0]
+            pp = df['Polygon']
+            print(type(p))
+            print(type(pp))
         f.close()
 
 
@@ -69,5 +72,6 @@ def check_dims():
         f.close()
 
 
-check_dims()
+# check_dims()
+check_1_to_1()
 
