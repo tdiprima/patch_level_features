@@ -269,6 +269,46 @@ def create_map(json_files, csv_files):
     return rtn_dict
 
 
+def get_polygons_within_tumors(poly_map_list, tumor_poly_list):
+    """
+    Reduce our list to that which our tumor areas contain.
+    :param poly_map_list:
+    :param tumor_poly_list:
+    :return:
+    """
+    start_time = time.time()
+    rtn_obj = {}
+
+    within = 0
+    intersects = 0
+    disjoin = 0
+    for tumor_roi in tumor_poly_list:
+        for key, val in poly_map_list.items():
+            # print("Key", key, 'points to', val)
+            polygons = val['polygons']
+            newList = []
+            for poly in polygons:
+                if poly.within(tumor_roi):
+                    newList.append(poly)
+                    within += 1
+                elif poly.intersects(tumor_roi):
+                    newList.append(poly)
+                    intersects += 1
+                elif poly.disjoint(tumor_roi):
+                    disjoin += 1
+            rtn_obj.update({key: newList})
+
+    print('within', within)
+    print('intersects', intersects)
+    print('disjoin', disjoin)
+
+    elapsed_time = time.time() - start_time
+    print('Runtime get_polygons_within_tumors: ')
+    print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
+
+    return rtn_obj
+
+
 # constant variables
 WORK_DIR = "/data1/tdiprima/dataset"
 CSV_FILE_PATH = "nfs004:/data/shared/bwang/composite_dataset"
@@ -296,8 +336,8 @@ SLIDE_DIR = os.path.join(WORK_DIR, CASE_ID) + os.sep
 CSV_REL_PATHS = get_file_list(CASE_ID, 'config/csv_file_path.list')
 
 # Fetch data.
-# assure_path_exists(SLIDE_DIR)
-# copy_src_data(SLIDE_DIR)
+assure_path_exists(SLIDE_DIR)
+copy_src_data(SLIDE_DIR)
 
 # Find what the pathologist circled as tumor.
 tumor_mark_list = get_tumor_markup(USER_NAME)
@@ -311,12 +351,7 @@ JSON_FILES, CSV_FILES = get_data_files()
 pre_poly = create_map(JSON_FILES, CSV_FILES)
 print('pre_poly', len(pre_poly))
 
-# str, list
-# this unique_id has many polygons
-# for key, val in pre_poly.items():
-#     print("Key", key, 'points to', val)
-#     polygons = val['polygons']
-#     image_width = val['image_width']
-#     image_height = val['image_height']
+lala = get_polygons_within_tumors(pre_poly, tumor_poly_list)
+print('lala', len(lala))
 
 exit(0)
