@@ -1,9 +1,11 @@
 import argparse
+import json
 import os
 import subprocess
 import sys
 from pathlib import Path
 
+import pandas
 from pymongo import MongoClient, errors
 from shapely.geometry import Polygon, Point, MultiPoint
 
@@ -35,7 +37,7 @@ def mongodb_connect(client_uri):
 
 def get_file_list(substr, filepath):
     """
-    Find lines in data file containing substring.
+    Find lines in data file containing (case_id) substring.
     Return list.
     :param substr:
     :param filepath:
@@ -179,6 +181,10 @@ def string_to_polygon(poly_data, image_width, image_height):
 
 
 def get_data_files():
+    """
+    Return 2 lists containing full paths for CSVs and JSONs.
+    :return:
+    """
     filenames = os.listdir(SLIDE_DIR)  # get all files' and folders' names in directory
 
     folders = []
@@ -208,6 +214,40 @@ def get_data_files():
     json_files.sort()
     csv_files.sort()
     return json_files, csv_files
+
+
+def create_map(json_files, csv_files):
+    """
+    Map out_file_prefix to polygons, so we can find out which polygons are within or intersect a tumor region,
+    and then be able to re-access the corresponding json and csv data.
+    :param json_files:
+    :param csv_files:
+    :return:
+    """
+    rtn_dict = {}
+
+    for n, jfile in enumerate(json_files):
+        with open(jfile, 'r') as f:
+            mydict = {}
+            # Read JSON data into the dict1 variable
+            dict1 = json.load(f)
+            str = dict1['out_file_prefix']
+            cfile = csv_files[n]
+
+            if str not in cfile:
+                print('There should be 1 json file for 1 csv file.')
+                exit(1)
+
+            # Read CSV data into the dataframe variable
+            df = pandas.read_csv(cfile)
+            if df.empty():
+                continue
+            else:
+                mydict[str] = df['Polygon']
+        f.close()
+        rtn_dict.update(mydict)
+
+    return rtn_dict
 
 
 # constant variables
@@ -248,5 +288,8 @@ tumor_poly_list = convert_to_polygons(tumor_mark_list)
 
 # Fetch list of data files
 JSON_FILES, CSV_FILES = get_data_files()
+
+mymap = create_map(JSON_FILES, CSV_FILES)
+print('mymap', mymap)
 
 exit(0)
