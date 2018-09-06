@@ -240,7 +240,7 @@ def create_map(json_files, csv_files):
 
             # Read CSV data into the dataframe variable
             df = pandas.read_csv(cfile)
-            if df.empty():
+            if df.empty:
                 continue
             else:
                 mydict[str] = df['Polygon']
