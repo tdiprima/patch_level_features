@@ -3,8 +3,8 @@ import json
 import os
 import subprocess
 import sys
-from pathlib import Path
 import time
+from pathlib import Path
 
 import pandas
 from pymongo import MongoClient, errors
@@ -225,14 +225,12 @@ def create_map(json_files, csv_files):
     :param csv_files:
     :return:
     """
-    print('create_map')
     rtn_dict = {}
     start_time = time.time()
 
     for n, jfile in enumerate(json_files):
-        print(n, jfile)
         with open(jfile, 'r') as f:
-            # Read JSON data into the dict1 variable
+            # Read JSON data into the json_dict variable
             json_dict = json.load(f)
             str = json_dict['out_file_prefix']
             imw = json_dict['image_width']
@@ -248,19 +246,21 @@ def create_map(json_files, csv_files):
             if df.empty:
                 continue
             else:
+                # out_file_prefix = Series
+                # path_poly[str] = df['Polygon']
                 path_poly = {}
                 newList = []
                 series_to_list = df['Polygon'].tolist()
-                print('len', len(series_to_list))
-                print('before conversion')
                 for s in series_to_list:
                     poly = string_to_polygon(s, imw, imh)
                     newList.append(poly)
-                print('after conversion')
                 polyinfo = {"polygons": newList, "image_width": imw, "image_height": imh}
                 path_poly[str] = polyinfo
+
             rtn_dict.update(path_poly)
+
         f.close()
+        # rtn_dict.update(path_poly)
 
     elapsed_time = time.time() - start_time
     print('Runtime create_map: ')
@@ -313,12 +313,10 @@ print('pre_poly', len(pre_poly))
 
 # str, list
 # this unique_id has many polygons
-for key, val in pre_poly.items():
-    print("Key", key, 'points to', val)
-    polygons = val['polygons']
-    image_width = val['image_width']
-    image_height = val['image_height']
-    break  # testing purposes
-
+# for key, val in pre_poly.items():
+#     print("Key", key, 'points to', val)
+#     polygons = val['polygons']
+#     image_width = val['image_width']
+#     image_height = val['image_height']
 
 exit(0)
