@@ -407,6 +407,52 @@ def get_polygons_within_tumors(poly_map_list, tumor_list):
     return rtn_obj
 
 
+def get_csv_data(jfiles, cfiles):
+    start_time = time.time()
+    path_poly = {}
+    rtn_dict = {}
+    count = 0
+
+    for jfile in jfiles:
+        with open(jfile, 'r') as f:
+            # Read JSON data into the json_dict variable
+            json_dict = json.load(f)
+            str = json_dict['out_file_prefix']
+            imw = json_dict['image_width']
+            imh = json_dict['image_height']
+            tile_height = json_dict['tile_height']
+            tile_width = json_dict['tile_width']
+            tile_minx = json_dict['tile_minx']
+            tile_miny = json_dict['tile_miny']
+
+            for cfile in cfiles:
+                if str in cfile:
+                    df = pandas.read_csv(cfile)
+                    if df.empty:
+                        continue
+                    else:
+                        count += 1
+                        newdf = df[
+                            ['Perimeter', 'Circularity', 'r_IntensityMean', 'r_GradientMean', 'r_cytoIntensityMean',
+                             'r_cytoGradientMean', 'Perimeter', 'Flatness', 'Polygon']].copy()
+                        polyinfo = {"df": newdf, "image_width": imw, "image_height": imh, "tile_height": tile_height,
+                                    "tile_width": tile_width, "tile_minx": tile_minx, "tile_miny": tile_miny}
+                        path_poly[str] = polyinfo
+                        break
+                else:
+                    continue
+
+        rtn_dict.update(path_poly)
+        f.close()
+
+    print('count: ', count)
+    elapsed_time = time.time() - start_time
+    print('Runtime get_csv_data: ')
+    print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
+
+    return path_poly
+
+
 # constant variables
 WORK_DIR = "/data1/tdiprima/dataset"
 CSV_FILE_PATH = "nfs004:/data/shared/bwang/composite_dataset"
@@ -450,6 +496,12 @@ JSON_FILES, CSV_FILES = get_data_files()
 
 jfile_list = get_poly_within(JSON_FILES, tumor_poly_list)
 print('jfile_list len: ', len(jfile_list))
+
+csv_data = get_csv_data(jfile_list, CSV_FILES)
+
+for key, val in csv_data.items():
+    print("Key", key, 'points to', val)
+    break
 
 # pre_poly_map = create_map(JSON_FILES, CSV_FILES)
 # print('pre_poly_map', len(pre_poly_map))
