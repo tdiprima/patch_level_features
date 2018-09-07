@@ -247,61 +247,9 @@ def get_data_files():
     return json_files, csv_files
 
 
-def create_map(json_files, csv_files):
-    """
-    Map out_file_prefix to polygons, so we can find out which polygons are within or intersect a tumor region,
-    and then be able to re-access the corresponding json and csv data.
-    :param json_files:
-    :param csv_files:
-    :return:
-    """
-    rtn_dict = {}
-    start_time = time.time()
-
-    for n, jfile in enumerate(json_files):
-        with open(jfile, 'r') as f:
-            # Read JSON data into the json_dict variable
-            json_dict = json.load(f)
-            str = json_dict['out_file_prefix']
-            imw = json_dict['image_width']
-            imh = json_dict['image_height']
-            cfile = csv_files[n]
-
-            if str not in cfile:
-                print('There should be 1 json file for 1 csv file.')
-                exit(1)
-
-            # Read CSV data into the dataframe variable
-            df = pandas.read_csv(cfile)
-            if df.empty:
-                continue
-            else:
-                # out_file_prefix = Series
-                # path_poly[str] = df['Polygon']
-                path_poly = {}
-                newList = []
-                series_to_list = df['Polygon'].tolist()
-                for s in series_to_list:
-                    poly = string_to_polygon(s, imw, imh)
-                    newList.append(poly)
-                polyinfo = {"polygons": newList, "image_width": imw, "image_height": imh}
-                path_poly[str] = polyinfo
-
-            rtn_dict.update(path_poly)
-
-        f.close()
-        # rtn_dict.update(path_poly)
-
-    elapsed_time = time.time() - start_time
-    print('Runtime create_map: ')
-    print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
-
-    return rtn_dict
-
-
 def get_poly_within(jfiles, tumor_list):
     """
-    Narrow it down...
+    Identify only the files within the tumor regions
     :param jfiles:
     :param tumor_list:
     :return:
@@ -366,7 +314,7 @@ def get_poly_within(jfiles, tumor_list):
     return rtn_jfiles
 
 
-def get_polygons_within_tumors(poly_map_list, tumor_list):
+def get_polygons_within_tumors(csv_data, tumor_list):
     """
     Reduce our list to that which our tumor areas contain.
     :param poly_map_list:
@@ -380,8 +328,13 @@ def get_polygons_within_tumors(poly_map_list, tumor_list):
     intersects = 0
     disjoin = 0
     for tumor_roi in tumor_list:
-        for key, val in poly_map_list.items():
+        for key, val in csv_data.items():
             # print("Key", key, 'points to', val)
+            newdf = val['df']
+            polygons = newdf['polygons'][0]  # TODO
+            # ['Perimeter', 'Circularity', 'r_IntensityMean', 'r_GradientMean', 'r_cytoIntensityMean',
+            # 'r_cytoGradientMean', 'Perimeter', 'Flatness', 'Polygon']
+
             polygons = val['polygons']
             newList = []
             for poly in polygons:
@@ -391,8 +344,8 @@ def get_polygons_within_tumors(poly_map_list, tumor_list):
                 elif poly.intersects(tumor_roi):
                     newList.append(poly)
                     intersects += 1
-                # elif poly.disjoint(tumor_roi):
-                #     disjoin += 1
+                elif poly.disjoint(tumor_roi):
+                     disjoin += 1
             if newList:
                 rtn_obj.update({key: newList})
 
@@ -408,6 +361,12 @@ def get_polygons_within_tumors(poly_map_list, tumor_list):
 
 
 def get_csv_data(jfiles, cfiles):
+    """
+    Get data
+    :param jfiles:
+    :param cfiles:
+    :return:
+    """
     start_time = time.time()
     path_poly = {}
     rtn_dict = {}
@@ -494,23 +453,14 @@ tumor_poly_list = markup_to_polygons(tumor_mark_list)
 # Fetch list of data files
 JSON_FILES, CSV_FILES = get_data_files()
 
+# Identify only the files within the tumor regions
 jfile_list = get_poly_within(JSON_FILES, tumor_poly_list)
 print('jfile_list len: ', len(jfile_list))
 
+# Get data
 csv_data = get_csv_data(jfile_list, CSV_FILES)
 
-for key, val in csv_data.items():
-    # print("Key", key, 'points to', val)
-    newdf = val['df']
-    # ['Perimeter', 'Circularity', 'r_IntensityMean', 'r_GradientMean', 'r_cytoIntensityMean',
-    # 'r_cytoGradientMean', 'Perimeter', 'Flatness', 'Polygon']
-    print(newdf['Circularity'])
-    break
-
-# pre_poly_map = create_map(JSON_FILES, CSV_FILES)
-# print('pre_poly_map', len(pre_poly_map))
-#
-# poly_within = get_polygons_within_tumors(pre_poly_map, tumor_poly_list)
-# print('poly_within', len(poly_within))
+# Convert polygons
+# Find out how many per file are actually in the region
 
 exit(0)
