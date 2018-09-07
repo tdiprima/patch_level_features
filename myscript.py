@@ -500,7 +500,11 @@ print('jfile_list len: ', len(jfile_list))
 csv_data = get_csv_data(jfile_list, CSV_FILES)
 
 for key, val in csv_data.items():
-    print("Key", key, 'points to', val)
+    # print("Key", key, 'points to', val)
+    newdf = val['df']
+    # ['Perimeter', 'Circularity', 'r_IntensityMean', 'r_GradientMean', 'r_cytoIntensityMean',
+    # 'r_cytoGradientMean', 'Perimeter', 'Flatness', 'Polygon']
+    print(newdf['Circularity'])
     break
 
 # pre_poly_map = create_map(JSON_FILES, CSV_FILES)
