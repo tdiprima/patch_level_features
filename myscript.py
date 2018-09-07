@@ -123,9 +123,36 @@ def get_tumor_markup(user_name):
     return tumor_markup_list
 
 
-def convert_to_polygons(coordinates_list):
+def markup_to_polygons(markup_list):
     """
-    TODO:
+    Clean up and convert to something we can use.
+    :param markup_list:
+    :return:
+    """
+    m_poly_list = []
+    try:
+        # roll through our list of lists
+        for coordinates in markup_list:
+            points_list = []
+            # convert the point coordinates to Points
+            for m_point in coordinates:
+                m_point = Point(m_point[0], m_point[1])
+                points_list.append(m_point)
+            # create a Polygon
+            m = MultiPoint(points_list)
+            m_polygon = Polygon(m)
+            # append to return-list
+            m_poly_list.append(m_polygon)
+    except Exception as ex:
+        print('Error in convert_to_polygons', ex)
+        exit(1)
+
+    # Return list of polygons
+    return m_poly_list
+
+
+def coordinates_to_polygons(coordinates_list):
+    """
     Clean up and convert to something we can use.
     :param coordinates_list:
     :return:
@@ -283,7 +310,7 @@ def get_poly_within(jfiles, tumor_list):
     print('tumor_list len: ', len(tumor_list))
     temp = {}
     path_poly = {}
-    rtn_obj = {}
+    rtn_jfiles = []
     start_time = time.time()
 
     for jfile in jfiles:
@@ -328,14 +355,15 @@ def get_poly_within(jfiles, tumor_list):
                 gotone = True
                 count += 1
             if gotone:
-                rtn_obj.update({key: val})
+                rtn_jfiles.append(jfile)
+                # rtn_obj.update({key: val})
 
     print('count: ', count)
     elapsed_time = time.time() - start_time
-    print('Runtime get_polygons_within_tumors: ')
+    print('Runtime get_poly_within: ')
     print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
-    return rtn_obj
+    return rtn_jfiles
 
 
 def get_polygons_within_tumors(poly_map_list, tumor_list):
@@ -411,19 +439,17 @@ CSV_REL_PATHS = get_file_list(CASE_ID, 'config/csv_file_path.list')
 
 # Find what the pathologist circled as tumor.
 tumor_mark_list = get_tumor_markup(USER_NAME)
-print('tumor_mark_list', len(tumor_mark_list))
+# print('tumor_mark_list', len(tumor_mark_list))
 
 # List of Tumor polygons
-tumor_poly_list = convert_to_polygons(tumor_mark_list)
-print('tumor_poly_list', len(tumor_poly_list))
-
-exit(0)
+tumor_poly_list = markup_to_polygons(tumor_mark_list)
+# print('tumor_poly_list', len(tumor_poly_list))
 
 # Fetch list of data files
 JSON_FILES, CSV_FILES = get_data_files()
 
-rtn_obj = get_poly_within(JSON_FILES, tumor_poly_list)
-print('rtn_obj', rtn_obj)
+jfile_list = get_poly_within(JSON_FILES, tumor_poly_list)
+print('jfile_list len: ', len(jfile_list))
 
 # pre_poly_map = create_map(JSON_FILES, CSV_FILES)
 # print('pre_poly_map', len(pre_poly_map))
