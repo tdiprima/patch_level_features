@@ -294,9 +294,10 @@ def get_polygons_within_tumors(poly_map_list, tumor_poly_list):
                 elif poly.intersects(tumor_roi):
                     newList.append(poly)
                     intersects += 1
-                elif poly.disjoint(tumor_roi):
-                    disjoin += 1
-            rtn_obj.update({key: newList})
+                # elif poly.disjoint(tumor_roi):
+                #     disjoin += 1
+            if newList:
+                rtn_obj.update({key: newList})
 
     print('within', within)
     print('intersects', intersects)
@@ -348,10 +349,10 @@ tumor_poly_list = convert_to_polygons(tumor_mark_list)
 # Fetch list of data files
 JSON_FILES, CSV_FILES = get_data_files()
 
-pre_poly = create_map(JSON_FILES, CSV_FILES)
-print('pre_poly', len(pre_poly))
+pre_poly_map = create_map(JSON_FILES, CSV_FILES)
+print('pre_poly_map', len(pre_poly_map))
 
-lala = get_polygons_within_tumors(pre_poly, tumor_poly_list)
-print('lala', len(lala))
+poly_within = get_polygons_within_tumors(pre_poly_map, tumor_poly_list)
+print('poly_within', len(poly_within))
 
 exit(0)
