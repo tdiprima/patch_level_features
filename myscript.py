@@ -1,12 +1,14 @@
 import argparse
+import collections
 import json
 import os
 import subprocess
 import sys
 import time
-from pathlib import Path
+from datetime import datetime
 
 import pandas
+from pathlib import Path
 from pymongo import MongoClient, errors
 from shapely.geometry import Polygon, Point, MultiPoint
 
@@ -365,8 +367,7 @@ def get_csv_data(files):
     return rtn_dict
 
 
-def update_db(result):
-
+def update_db(result, vals, name):
     # Mean (the simple average of the numbers)
     m_Perimeter = result['Perimeter'].mean()
     m_Flatness = result['Flatness'].mean()
@@ -383,6 +384,40 @@ def update_db(result):
     std_b_GradientMean = result['b_GradientMean'].std()
     std_b_cytoIntensityMean = result['b_cytoIntensityMean'].std()
     std_r_cytoIntensityMean = result['r_cytoIntensityMean'].std()
+
+    try:
+        client = mongodb_connect('mongodb://' + args["db_host"] + ':27017')
+        client.server_info()  # force connection, trigger error to be caught
+        db = client.quip_comp
+        coll = db.objects
+        collection_saved = db[name + '_features_td']  # name
+        patch_feature_data = collections.OrderedDict()
+        patch_feature_data['case_id'] = CASE_ID
+        patch_feature_data['image_width'] = vals['image_width']
+        patch_feature_data['image_height'] = vals['image_height']
+        patch_feature_data['user'] = USER_NAME
+        patch_feature_data['tile_minx'] = vals['tile_minx']
+        patch_feature_data['tile_miny'] = vals['tile_miny']
+        patch_feature_data['tile_size'] = vals['tile_size']
+        patch_feature_data['Flatness_segment_mean'] = m_Flatness
+        patch_feature_data['Flatness_segment_std'] = std_Flatness
+        patch_feature_data['Perimeter_segment_mean'] = m_Perimeter
+        patch_feature_data['Perimeter_segment_std'] = std_Perimeter
+        patch_feature_data['Circularity_segment_mean'] = m_Circularity
+        patch_feature_data['Circularity_segment_std'] = std_Circularity
+        patch_feature_data['r_GradientMean_segment_mean'] = m_r_GradientMean
+        patch_feature_data['r_GradientMean_segment_std'] = std_r_GradientMean
+        patch_feature_data['b_GradientMean_segment_mean'] = m_b_GradientMean
+        patch_feature_data['b_GradientMean_segment_std'] = std_b_GradientMean
+        patch_feature_data['r_cytoIntensityMean_segment_mean'] = m_r_cytoIntensityMean
+        patch_feature_data['r_cytoIntensityMean_segment_std'] = std_r_cytoIntensityMean
+        patch_feature_data['b_cytoIntensityMean_segment_mean'] = m_b_cytoIntensityMean
+        patch_feature_data['b_cytoIntensityMean_segment_std'] = std_b_cytoIntensityMean
+        patch_feature_data['datetime'] = datetime.now()
+        collection_saved.insert_one(patch_feature_data)
+    except Exception as e:
+        print('saveFeatures2MongoDB: ', e)
+        exit(1)
 
     # Do something with result
 
@@ -400,7 +435,7 @@ def calculate(data, patch):
         # count = 0
         for key, val in data.items():
             result = val['df']
-            update_db(result)
+            update_db(result, val, 'patch')
             # count += df.shape[0]
             # Series quantile
             # print(s.quantile([.25, .5, .75]))
@@ -410,49 +445,7 @@ def calculate(data, patch):
         for key, val in data.items():
             frames.append(val['df'])
         result = pandas.concat(frames)
-        update_db(result)
-
-
-def calculate_patch_level(data):
-    """
-    Mean and std of Perimeter, Flatness, Circularity,
-    r_GradientMean, b_GradientMean, b_cytoIntensityMean, r_cytoIntensityMean.
-    :param data:
-    :return:
-    """
-
-    frames = []
-    for key, val in data.items():
-        frames.append(val['df'])
-
-    result = pandas.concat(frames)
-    # print(result.describe(include='all'))
-
-    # Mean (the simple average of the numbers)
-    m_Perimeter = result['Perimeter'].mean()
-    m_Flatness = result['Flatness'].mean()
-    m_Circularity = result['Circularity'].mean()
-    m_r_GradientMean = result['r_GradientMean'].mean()
-    m_b_GradientMean = result['b_GradientMean'].mean()
-    m_b_cytoIntensityMean = result['b_cytoIntensityMean'].mean()
-    m_r_cytoIntensityMean = result['r_cytoIntensityMean'].mean()
-
-    std_Perimeter = result['Perimeter'].std()
-    std_Flatness = result['Flatness'].std()
-    std_Circularity = result['Circularity'].std()
-    std_r_GradientMean = result['r_GradientMean'].std()
-    std_b_GradientMean = result['b_GradientMean'].std()
-    std_b_cytoIntensityMean = result['b_cytoIntensityMean'].std()
-    std_r_cytoIntensityMean = result['r_cytoIntensityMean'].std()
-
-    # Series quantile
-    # print(s.quantile([.25, .5, .75]))
-    # count = 0
-    # for key, val in data.items():
-    #     df = val['df']
-    #     count += df.shape[0]
-
-
+        update_db(result, val, 'patient')
 
 
 # constant variables
@@ -506,5 +499,6 @@ print('csv_data len: ', len(csv_data))  # NOTE: s/b less b/c we ignore empty dat
 
 # Calculate!
 calculate(csv_data, False)
+calculate(csv_data, True)
 
 exit(0)
