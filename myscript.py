@@ -323,7 +323,7 @@ def get_csv_data(files):
     :return:
     """
     start_time = time.time()
-    path_poly = {}
+    obj_map = {}
     rtn_dict = {}
 
     for ff in files:
@@ -346,24 +346,16 @@ def get_csv_data(files):
             if df.empty:
                 continue
             else:
+                # new = old[['A', 'C', 'D']].copy()
                 newdf = df[
-                    ['Perimeter', 'Circularity', 'r_IntensityMean', 'r_GradientMean', 'r_cytoIntensityMean',
-                     'r_cytoGradientMean', 'Perimeter', 'Flatness', 'Polygon']].copy()
-                # newList = []
-                # series_to_list = newdf['Polygon'].tolist()
-                # for s in series_to_list:
-                #     poly = string_to_polygon(s, imw, imh)
-                #     newList.append(poly)
-                # "polygons": newList,
-                polyinfo = {"df": newdf, "image_width": imw, "image_height": imh,
+                    ['Perimeter', 'Flatness', 'Circularity', 'r_GradientMean', 'b_GradientMean', 'b_cytoIntensityMean',
+                     'r_cytoIntensityMean', 'r_IntensityMean', 'r_cytoGradientMean', 'Polygon']].copy()
+                data_obj = {"df": newdf, "image_width": imw, "image_height": imh,
                             "tile_height": tile_height,
                             "tile_width": tile_width, "tile_minx": tile_minx, "tile_miny": tile_miny}
-                path_poly[ff] = polyinfo
-                # break
-            # else:
-            # continue
-
-        rtn_dict.update(path_poly)
+                obj_map[ff] = data_obj
+        # Add to return variable
+        rtn_dict.update(obj_map)
         f.close()
 
     elapsed_time = time.time() - start_time
@@ -371,6 +363,96 @@ def get_csv_data(files):
     print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
     return rtn_dict
+
+
+def update_db(result):
+
+    # Mean (the simple average of the numbers)
+    m_Perimeter = result['Perimeter'].mean()
+    m_Flatness = result['Flatness'].mean()
+    m_Circularity = result['Circularity'].mean()
+    m_r_GradientMean = result['r_GradientMean'].mean()
+    m_b_GradientMean = result['b_GradientMean'].mean()
+    m_b_cytoIntensityMean = result['b_cytoIntensityMean'].mean()
+    m_r_cytoIntensityMean = result['r_cytoIntensityMean'].mean()
+
+    std_Perimeter = result['Perimeter'].std()
+    std_Flatness = result['Flatness'].std()
+    std_Circularity = result['Circularity'].std()
+    std_r_GradientMean = result['r_GradientMean'].std()
+    std_b_GradientMean = result['b_GradientMean'].std()
+    std_b_cytoIntensityMean = result['b_cytoIntensityMean'].std()
+    std_r_cytoIntensityMean = result['r_cytoIntensityMean'].std()
+
+    # Do something with result
+
+
+def calculate(data, patch):
+    """
+    Mean and std of Perimeter, Flatness, Circularity,
+    r_GradientMean, b_GradientMean, b_cytoIntensityMean, r_cytoIntensityMean.
+    :param data:
+    :param patch: T/F (T=patch, F=patient
+    :return:
+    """
+
+    if patch:
+        # count = 0
+        for key, val in data.items():
+            result = val['df']
+            update_db(result)
+            # count += df.shape[0]
+            # Series quantile
+            # print(s.quantile([.25, .5, .75]))
+
+    if not patch:
+        frames = []
+        for key, val in data.items():
+            frames.append(val['df'])
+        result = pandas.concat(frames)
+        update_db(result)
+
+
+def calculate_patch_level(data):
+    """
+    Mean and std of Perimeter, Flatness, Circularity,
+    r_GradientMean, b_GradientMean, b_cytoIntensityMean, r_cytoIntensityMean.
+    :param data:
+    :return:
+    """
+
+    frames = []
+    for key, val in data.items():
+        frames.append(val['df'])
+
+    result = pandas.concat(frames)
+    # print(result.describe(include='all'))
+
+    # Mean (the simple average of the numbers)
+    m_Perimeter = result['Perimeter'].mean()
+    m_Flatness = result['Flatness'].mean()
+    m_Circularity = result['Circularity'].mean()
+    m_r_GradientMean = result['r_GradientMean'].mean()
+    m_b_GradientMean = result['b_GradientMean'].mean()
+    m_b_cytoIntensityMean = result['b_cytoIntensityMean'].mean()
+    m_r_cytoIntensityMean = result['r_cytoIntensityMean'].mean()
+
+    std_Perimeter = result['Perimeter'].std()
+    std_Flatness = result['Flatness'].std()
+    std_Circularity = result['Circularity'].std()
+    std_r_GradientMean = result['r_GradientMean'].std()
+    std_b_GradientMean = result['b_GradientMean'].std()
+    std_b_cytoIntensityMean = result['b_cytoIntensityMean'].std()
+    std_r_cytoIntensityMean = result['r_cytoIntensityMean'].std()
+
+    # Series quantile
+    # print(s.quantile([.25, .5, .75]))
+    # count = 0
+    # for key, val in data.items():
+    #     df = val['df']
+    #     count += df.shape[0]
+
+
 
 
 # constant variables
@@ -421,5 +503,8 @@ print('jfile_list len: ', len(jfile_list))
 # Get data
 csv_data = get_csv_data(jfile_list)
 print('csv_data len: ', len(csv_data))  # NOTE: s/b less b/c we ignore empty data files.
+
+# Calculate!
+calculate(csv_data, False)
 
 exit(0)
