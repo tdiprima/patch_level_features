@@ -260,12 +260,14 @@ def get_poly_within(jfiles, tumor_list):
     path_poly = {}
     rtn_jfiles = []
     start_time = time.time()
+    pos = len('-algmeta.json')
 
+    # Collect data
     for jfile in jfiles:
         with open(jfile, 'r') as f:
             # Read JSON data into the json_dict variable
             json_dict = json.load(f)
-            str = json_dict['out_file_prefix']
+            # str = json_dict['out_file_prefix']
             imw = json_dict['image_width']
             imh = json_dict['image_height']
             tile_height = json_dict['tile_height']
@@ -274,6 +276,7 @@ def get_poly_within(jfiles, tumor_list):
             tile_miny = json_dict['tile_miny']
             inc_x = tile_minx + tile_width
             inc_y = tile_miny + tile_height
+            # Create polygon for comparison
             point1 = Point(float(tile_minx) / float(imw), float(tile_miny) / float(imh))
             point2 = Point(float(inc_x) / float(imw), float(tile_miny) / float(imh))
             point3 = Point(float(inc_x) / float(imw), float(inc_y) / float(imh))
@@ -281,7 +284,8 @@ def get_poly_within(jfiles, tumor_list):
             point5 = Point(float(tile_minx) / float(imw), float(tile_miny) / float(imh))
             m = MultiPoint([point1, point2, point3, point4, point5])
             polygon = Polygon(m)
-            path_poly[str] = polygon
+            # Map data file location (prefix) to bbox polygon
+            path_poly[f.name[:-pos]] = polygon
         f.close()
         temp.update(path_poly)
 
@@ -289,7 +293,6 @@ def get_poly_within(jfiles, tumor_list):
     for tumor_roi in tumor_list:
         for key, val in temp.items():
             gotone = False
-            # print("Key", key, 'points to', val)
             if val.within(tumor_roi):
                 gotone = True
                 count += 1
@@ -303,10 +306,9 @@ def get_poly_within(jfiles, tumor_list):
                 gotone = True
                 count += 1
             if gotone:
-                rtn_jfiles.append(jfile)
+                rtn_jfiles.append(key)
                 # rtn_obj.update({key: val})
 
-    print('count: ', count)
     elapsed_time = time.time() - start_time
     print('Runtime get_poly_within: ')
     print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
@@ -314,20 +316,19 @@ def get_poly_within(jfiles, tumor_list):
     return rtn_jfiles
 
 
-def get_csv_data(jfiles, cfiles):
+def get_csv_data(files):
     """
     Get data
-    :param jfiles:
-    :param cfiles:
+    :param files:
     :return:
     """
     start_time = time.time()
     path_poly = {}
     rtn_dict = {}
-    count = 0
 
-    for jfile in jfiles:
-        with open(jfile, 'r') as f:
+    for ff in files:
+        jname = ff + '-algmeta.json'  # '-features.csv'
+        with open(jname, 'r') as f:
             # Read JSON data into the json_dict variable
             json_dict = json.load(f)
             str = json_dict['out_file_prefix']
@@ -338,34 +339,33 @@ def get_csv_data(jfiles, cfiles):
             tile_minx = json_dict['tile_minx']
             tile_miny = json_dict['tile_miny']
 
-            for cfile in cfiles:
-                if str in cfile:
-                    df = pandas.read_csv(cfile)
-                    if df.empty:
-                        continue
-                    else:
-                        count += 1
-                        newdf = df[
-                            ['Perimeter', 'Circularity', 'r_IntensityMean', 'r_GradientMean', 'r_cytoIntensityMean',
-                             'r_cytoGradientMean', 'Perimeter', 'Flatness', 'Polygon']].copy()
-                        # newList = []
-                        # series_to_list = newdf['Polygon'].tolist()
-                        # for s in series_to_list:
-                        #     poly = string_to_polygon(s, imw, imh)
-                        #     newList.append(poly)
-                        # "polygons": newList,
-                        polyinfo = {"df": newdf, "image_width": imw, "image_height": imh,
-                                    "tile_height": tile_height,
-                                    "tile_width": tile_width, "tile_minx": tile_minx, "tile_miny": tile_miny}
-                        path_poly[str] = polyinfo
-                        break
-                else:
-                    continue
+            cname = ff + '-features.csv'
+
+            df = pandas.read_csv(cname)
+            # print('df.shape[0]: ', df.shape[0])
+            if df.empty:
+                continue
+            else:
+                newdf = df[
+                    ['Perimeter', 'Circularity', 'r_IntensityMean', 'r_GradientMean', 'r_cytoIntensityMean',
+                     'r_cytoGradientMean', 'Perimeter', 'Flatness', 'Polygon']].copy()
+                # newList = []
+                # series_to_list = newdf['Polygon'].tolist()
+                # for s in series_to_list:
+                #     poly = string_to_polygon(s, imw, imh)
+                #     newList.append(poly)
+                # "polygons": newList,
+                polyinfo = {"df": newdf, "image_width": imw, "image_height": imh,
+                            "tile_height": tile_height,
+                            "tile_width": tile_width, "tile_minx": tile_minx, "tile_miny": tile_miny}
+                path_poly[ff] = polyinfo
+                # break
+            # else:
+            # continue
 
         rtn_dict.update(path_poly)
         f.close()
 
-    print('count: ', count)
     elapsed_time = time.time() - start_time
     print('Runtime get_csv_data: ')
     print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
@@ -419,6 +419,7 @@ jfile_list = get_poly_within(JSON_FILES, tumor_poly_list)
 print('jfile_list len: ', len(jfile_list))
 
 # Get data
-csv_data = get_csv_data(jfile_list, CSV_FILES)
+csv_data = get_csv_data(jfile_list)
+print('csv_data len: ', len(csv_data))  # NOTE: s/b less b/c we ignore empty data files.
 
 exit(0)
