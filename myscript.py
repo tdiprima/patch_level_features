@@ -314,52 +314,6 @@ def get_poly_within(jfiles, tumor_list):
     return rtn_jfiles
 
 
-def get_polygons_within_tumors(csv_data, tumor_list):
-    """
-    Reduce our list to that which our tumor areas contain.
-    :param poly_map_list:
-    :param tumor_list:
-    :return:
-    """
-    start_time = time.time()
-    rtn_obj = {}
-
-    within = 0
-    intersects = 0
-    disjoin = 0
-    for tumor_roi in tumor_list:
-        for key, val in csv_data.items():
-            # print("Key", key, 'points to', val)
-            newdf = val['df']
-            polygons = newdf['polygons'][0]  # TODO
-            # ['Perimeter', 'Circularity', 'r_IntensityMean', 'r_GradientMean', 'r_cytoIntensityMean',
-            # 'r_cytoGradientMean', 'Perimeter', 'Flatness', 'Polygon']
-
-            polygons = val['polygons']
-            newList = []
-            for poly in polygons:
-                if poly.within(tumor_roi):
-                    newList.append(poly)
-                    within += 1
-                elif poly.intersects(tumor_roi):
-                    newList.append(poly)
-                    intersects += 1
-                elif poly.disjoint(tumor_roi):
-                     disjoin += 1
-            if newList:
-                rtn_obj.update({key: newList})
-
-    print('within', within)
-    print('intersects', intersects)
-    print('disjoin', disjoin)
-
-    elapsed_time = time.time() - start_time
-    print('Runtime get_polygons_within_tumors: ')
-    print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
-
-    return rtn_obj
-
-
 def get_csv_data(jfiles, cfiles):
     """
     Get data
@@ -394,7 +348,14 @@ def get_csv_data(jfiles, cfiles):
                         newdf = df[
                             ['Perimeter', 'Circularity', 'r_IntensityMean', 'r_GradientMean', 'r_cytoIntensityMean',
                              'r_cytoGradientMean', 'Perimeter', 'Flatness', 'Polygon']].copy()
-                        polyinfo = {"df": newdf, "image_width": imw, "image_height": imh, "tile_height": tile_height,
+                        # newList = []
+                        # series_to_list = newdf['Polygon'].tolist()
+                        # for s in series_to_list:
+                        #     poly = string_to_polygon(s, imw, imh)
+                        #     newList.append(poly)
+                        # "polygons": newList,
+                        polyinfo = {"df": newdf, "image_width": imw, "image_height": imh,
+                                    "tile_height": tile_height,
                                     "tile_width": tile_width, "tile_minx": tile_minx, "tile_miny": tile_miny}
                         path_poly[str] = polyinfo
                         break
@@ -409,7 +370,7 @@ def get_csv_data(jfiles, cfiles):
     print('Runtime get_csv_data: ')
     print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
-    return path_poly
+    return rtn_dict
 
 
 # constant variables
@@ -459,8 +420,5 @@ print('jfile_list len: ', len(jfile_list))
 
 # Get data
 csv_data = get_csv_data(jfile_list, CSV_FILES)
-
-# Convert polygons
-# Find out how many per file are actually in the region
 
 exit(0)
