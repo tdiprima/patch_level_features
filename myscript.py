@@ -389,9 +389,8 @@ def update_db(result, vals, name):
         client = mongodb_connect('mongodb://' + args["db_host"] + ':27017')
         client.server_info()  # force connection, trigger error to be caught
         db = client.quip_comp
-        coll = db.objects
         collection_saved = db[name + '_features_td']  # name
-        patch_feature_data = coll.OrderedDict()
+        patch_feature_data = collection_saved.OrderedDict()
         patch_feature_data['case_id'] = CASE_ID
         patch_feature_data['image_width'] = vals['image_width']
         patch_feature_data['image_height'] = vals['image_height']
@@ -454,7 +453,6 @@ def test_db():
         client = mongodb_connect('mongodb://' + args["db_host"] + ':27017')
         client.server_info()  # force connection, trigger error to be caught
         db = client.quip_comp
-        coll = db.objects
         collection_saved = db[name + '_features_td']  # name
         patch_feature_data = collections.OrderedDict()
         patch_feature_data['test'] = 'test'
