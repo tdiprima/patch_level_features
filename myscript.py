@@ -391,7 +391,7 @@ def update_db(result, vals, name):
         db = client.quip_comp
         coll = db.objects
         collection_saved = db[name + '_features_td']  # name
-        patch_feature_data = collections.OrderedDict()
+        patch_feature_data = coll.OrderedDict()
         patch_feature_data['case_id'] = CASE_ID
         patch_feature_data['image_width'] = vals['image_width']
         patch_feature_data['image_height'] = vals['image_height']
@@ -427,7 +427,7 @@ def calculate(data, patch):
     Mean and std of Perimeter, Flatness, Circularity,
     r_GradientMean, b_GradientMean, b_cytoIntensityMean, r_cytoIntensityMean.
     :param data:
-    :param patch: T/F (T=patch, F=patient
+    :param patch: T/F (T=patch, F=patient)
     :return:
     """
 
@@ -446,6 +446,24 @@ def calculate(data, patch):
             frames.append(val['df'])
         result = pandas.concat(frames)
         update_db(result, val, 'patient')
+
+
+def test_db():
+    try:
+        name = 'test'
+        client = mongodb_connect('mongodb://' + args["db_host"] + ':27017')
+        client.server_info()  # force connection, trigger error to be caught
+        db = client.quip_comp
+        coll = db.objects
+        collection_saved = db[name + '_features_td']  # name
+        patch_feature_data = collections.OrderedDict()
+        patch_feature_data['test'] = 'test'
+        patch_feature_data['datetime'] = datetime.now()
+        collection_saved.insert_one(patch_feature_data)
+    except Exception as e:
+        print('test_db: ', e)
+        exit(1)
+    exit(0)
 
 
 # constant variables
@@ -491,7 +509,7 @@ JSON_FILES, CSV_FILES = get_data_files()
 
 # Identify only the files within the tumor regions
 jfile_list = get_poly_within(JSON_FILES, tumor_poly_list)
-print('jfile_list len: ', len(jfile_list))
+# print('jfile_list len: ', len(jfile_list))
 
 # Get data
 csv_data = get_csv_data(jfile_list)
