@@ -408,9 +408,8 @@ def update_db(df, vals, name):
         # client.server_info()  # force connection, trigger error to be caught
         # db = client.quip_comp
         # collection_saved = db[name + '_features_td']  # name
+        patch_feature_data = {}  # Remove when enabling db write.
         # patch_feature_data = collection_saved.OrderedDict()
-
-        patch_feature_data = {}
         patch_feature_data['case_id'] = CASE_ID
         patch_feature_data['image_width'] = vals['image_width']
         patch_feature_data['image_height'] = vals['image_height']
@@ -433,10 +432,8 @@ def update_db(df, vals, name):
         patch_feature_data['r_cytoIntensityMean_segment_std'] = std_r_cytoIntensityMean
         patch_feature_data['b_cytoIntensityMean_segment_mean'] = m_b_cytoIntensityMean
         patch_feature_data['b_cytoIntensityMean_segment_std'] = std_b_cytoIntensityMean
-        patch_feature_data['datetime'] = datetime.now()
-
-        print('patch_feature_data', patch_feature_data)
-
+        print('patch_feature_data', json.dumps(patch_feature_data, indent=4, sort_keys=True))
+        # patch_feature_data['datetime'] = datetime.now()
         # collection_saved.insert_one(patch_feature_data)
 
     except Exception as e:
@@ -452,15 +449,21 @@ def calculate(data, is_patch):
     :param is_patch: T/F (T=patch, F=patient)
     :return:
     """
+    print('Calculating features...')
+    start_time = time.time()
 
     p = Path(os.path.join(SLIDE_DIR, (CASE_ID + '.svs')))
+    print('Reading slide...')
+    start_time = time.time()
     osr = openslide.OpenSlide(str(p))
+    elapsed_time = time.time() - start_time
+    print('Time it takes to read slide: ', elapsed_time)
 
     if is_patch:
         # count = 0
         for key, val in data.items():
-            patch(osr, val['tile_minx'], val['tile_miny'], val['image_width'], val['tile_height'])
             df = val['df']
+            histology(osr, val['tile_minx'], val['tile_miny'], val['image_width'], val['tile_height'])
             update_db(df, val, 'patch')
             exit(0)  # TODO: TEST ONE.
 
@@ -476,6 +479,10 @@ def calculate(data, is_patch):
         update_db(result, val, 'patient')
 
     osr.close()
+
+    elapsed_time = time.time() - start_time
+    print('Runtime calculate: ')
+    print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
 
 def test_db():
@@ -494,7 +501,7 @@ def test_db():
         exit(1)
 
 
-def patch(osr, min_x, min_y, w, h):
+def histology(osr, min_x, min_y, w, h):
     """
 
     :param osr:
@@ -622,12 +629,11 @@ jfile_list = get_poly_within(JSON_FILES, tumor_poly_list)
 
 # Get data
 csv_data = get_csv_data(jfile_list)
-print('csv_data len: ', len(csv_data))  # NOTE: s/b less b/c we ignore empty data files.
+# print('csv_data len: ', len(csv_data))  # NOTE: s/b less b/c we ignore empty data files.
 
 # Calculate!
 # calculate(csv_data, False)
 calculate(csv_data, True)
 
-# patch(osr, min_x, min_y, w, h)
-
 exit(0)
+
