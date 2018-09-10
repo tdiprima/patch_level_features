@@ -5,13 +5,16 @@ import os
 import subprocess
 import sys
 import time
-import OpenSlide
 from datetime import datetime
-
-import pandas
 from pathlib import Path
+
+import cv2
+import numpy as np
+import openslide
+import pandas
 from pymongo import MongoClient, errors
 from shapely.geometry import Polygon, Point, MultiPoint
+from skimage.color import separate_stains, hed_from_rgb
 
 
 def assure_path_exists(path):
@@ -351,8 +354,9 @@ def get_csv_data(files):
             else:
                 # new = old[['A', 'C', 'D']].copy()
                 newdf = df[
-                    ['Perimeter', 'Flatness', 'Circularity', 'r_GradientMean', 'b_GradientMean', 'b_cytoIntensityMean',
-                     'r_cytoIntensityMean', 'r_IntensityMean', 'r_cytoGradientMean', 'Polygon']].copy()
+                    ['AreaInPixels', 'Perimeter', 'Flatness', 'Circularity', 'r_GradientMean', 'b_GradientMean',
+                     'b_cytoIntensityMean', 'r_cytoIntensityMean', 'r_IntensityMean', 'r_cytoGradientMean',
+                     'Polygon']].copy()
                 data_obj = {"df": newdf, "image_width": imw, "image_height": imh,
                             "tile_height": tile_height,
                             "tile_width": tile_width, "tile_minx": tile_minx, "tile_miny": tile_miny}
@@ -368,23 +372,34 @@ def get_csv_data(files):
     return rtn_dict
 
 
-def update_db(result, vals, name):
-    # Mean (the simple average of the numbers)
-    m_Perimeter = result['Perimeter'].mean()
-    m_Flatness = result['Flatness'].mean()
-    m_Circularity = result['Circularity'].mean()
-    m_r_GradientMean = result['r_GradientMean'].mean()
-    m_b_GradientMean = result['b_GradientMean'].mean()
-    m_b_cytoIntensityMean = result['b_cytoIntensityMean'].mean()
-    m_r_cytoIntensityMean = result['r_cytoIntensityMean'].mean()
+def update_db(df, vals, name):
+    """
 
-    std_Perimeter = result['Perimeter'].std()
-    std_Flatness = result['Flatness'].std()
-    std_Circularity = result['Circularity'].std()
-    std_r_GradientMean = result['r_GradientMean'].std()
-    std_b_GradientMean = result['b_GradientMean'].std()
-    std_b_cytoIntensityMean = result['b_cytoIntensityMean'].std()
-    std_r_cytoIntensityMean = result['r_cytoIntensityMean'].std()
+    :param df:
+    :param vals:
+    :param name:
+    :return:
+    """
+    # Mean (the simple average of the numbers)
+    m_Perimeter = df['Perimeter'].mean()
+    m_Flatness = df['Flatness'].mean()
+    m_Circularity = df['Circularity'].mean()
+    m_r_GradientMean = df['r_GradientMean'].mean()
+    m_b_GradientMean = df['b_GradientMean'].mean()
+    m_b_cytoIntensityMean = df['b_cytoIntensityMean'].mean()
+    m_r_cytoIntensityMean = df['r_cytoIntensityMean'].mean()
+
+    std_Perimeter = df['Perimeter'].std()
+    std_Flatness = df['Flatness'].std()
+    std_Circularity = df['Circularity'].std()
+    std_r_GradientMean = df['r_GradientMean'].std()
+    std_b_GradientMean = df['b_GradientMean'].std()
+    std_b_cytoIntensityMean = df['b_cytoIntensityMean'].std()
+    std_r_cytoIntensityMean = df['r_cytoIntensityMean'].std()
+
+    nucleus_area = df['Perimeter']
+    percent_nuclear_material = compute_rnm(vals['tile_width'], vals['tile_height'], df)
+    print("ratio of nuclear material: ", percent_nuclear_material)
 
     try:
         client = mongodb_connect('mongodb://' + args["db_host"] + ':27017')
@@ -415,9 +430,9 @@ def update_db(result, vals, name):
         patch_feature_data['b_cytoIntensityMean_segment_mean'] = m_b_cytoIntensityMean
         patch_feature_data['b_cytoIntensityMean_segment_std'] = std_b_cytoIntensityMean
         patch_feature_data['datetime'] = datetime.now()
-        collection_saved.insert_one(patch_feature_data)
+        # collection_saved.insert_one(patch_feature_data)
     except Exception as e:
-        print('saveFeatures2MongoDB: ', e)
+        print('update_db: ', e)
         exit(1)
 
 
@@ -437,9 +452,10 @@ def calculate(data, is_patch):
         # count = 0
         for key, val in data.items():
             patch(osr, val['tile_minx'], val['tile_miny'], val['image_width'], val['tile_height'])
+            df = val['df']
+            update_db(df, val, 'patch')
             exit(0)  # TODO: TESTING
-            # result = val['df']
-            # update_db(result, val, 'patch')
+
             # count += df.shape[0]
             # Series quantile
             # print(s.quantile([.25, .5, .75]))
@@ -449,7 +465,7 @@ def calculate(data, is_patch):
         for key, val in data.items():
             frames.append(val['df'])
         result = pandas.concat(frames)
-        # update_db(result, val, 'patient')
+        update_db(result, val, 'patient')
 
     osr.close()
 
@@ -481,11 +497,72 @@ def patch(osr, min_x, min_y, w, h):
     :return:
     """
     try:
-        roi = osr.read_region((min_x, min_y), 0, (w, h))  # PIL Image
+        # read_region returns an RGBA Image (PIL)
+        roi = osr.read_region((min_x, min_y), 0, (w, h))
+
+        grayscale_img = roi.convert('L')
+        rgb_img = roi.convert('RGB')
+
+        grayscale_img_matrix = np.array(grayscale_img)
+        rgb_img_matrix = np.array(rgb_img)
+
+        grayscale_patch_mean = np.mean(grayscale_img_matrix)
+        grayscale_patch_std = np.std(grayscale_img_matrix)
+
+        # Stain separation matrix
+        # hed_from_rgb: Hematoxylin + Eosin + DAB
+        hed_title_img = separate_stains(rgb_img_matrix, hed_from_rgb)
+
+        max1 = np.max(hed_title_img)
+        min1 = np.min(hed_title_img)
+
+        Hematoxylin_img_matrix = hed_title_img[:, :, 0]
+        Hematoxylin_img_matrix = ((Hematoxylin_img_matrix - min1) * 255 / (max1 - min1)).astype(np.uint8)
+
+        Hematoxylin_patch_mean = np.mean(Hematoxylin_img_matrix)
+        Hematoxylin_patch_std = np.std(Hematoxylin_img_matrix)
+
+        grayscale_patch_10th_percentile = np.percentile(grayscale_img_matrix, 10)
+        grayscale_patch_25th_percentile = np.percentile(grayscale_img_matrix, 25)
+        grayscale_patch_50th_percentile = np.percentile(grayscale_img_matrix, 50)
+        grayscale_patch_75th_percentile = np.percentile(grayscale_img_matrix, 75)
+        grayscale_patch_90th_percentile = np.percentile(grayscale_img_matrix, 90)
+
     except Exception as e:
         print('Error reading region: ', min_x, min_y)
         print(e)
         exit(1)
+
+
+def detect_bright_spots(gray):
+    """
+    Detect bright spots (no staining) and ignore those areas in area computation
+    :param gray:
+    :return:
+    """
+    # load the image, convert it to grayscale, and blur it
+    # image = cv2.imread('img/detect_bright_spots.png')
+    # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.GaussianBlur(gray, (11, 11), 0)
+    # Pixel values p >= 200 are set to 255 (white)
+    # Pixel values < 200 are set to 0 (black).
+    thresh = cv2.threshold(blurred, 200, 255, cv2.THRESH_BINARY)[1]
+
+    # Do something.
+
+
+def compute_rnm(w, h, df):
+    """
+    ratio of nuclear material
+    :param w:
+    :param h:
+    :param df:
+    :return:
+    """
+    area = w * h
+    total_polygon_area = df['AreaInPixels'].sum()
+    rnm = float(total_polygon_area / area)
+    return rnm
 
 
 # constant variables
