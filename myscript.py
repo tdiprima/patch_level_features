@@ -389,6 +389,7 @@ def update_db(df, vals, name):
     m_b_cytoIntensityMean = df['b_cytoIntensityMean'].mean()
     m_r_cytoIntensityMean = df['r_cytoIntensityMean'].mean()
 
+    # Standard Deviation
     std_Perimeter = df['Perimeter'].std()
     std_Flatness = df['Flatness'].std()
     std_Circularity = df['Circularity'].std()
@@ -397,16 +398,19 @@ def update_db(df, vals, name):
     std_b_cytoIntensityMean = df['b_cytoIntensityMean'].std()
     std_r_cytoIntensityMean = df['r_cytoIntensityMean'].std()
 
+    # Ratio of nuclear material
     nucleus_area = df['AreaInPixels'].sum()
     percent_nuclear_material = compute_rnm(vals['tile_width'], vals['tile_height'], nucleus_area)
     print("ratio of nuclear material: ", percent_nuclear_material)
 
     try:
-        client = mongodb_connect('mongodb://' + args["db_host"] + ':27017')
-        client.server_info()  # force connection, trigger error to be caught
-        db = client.quip_comp
-        collection_saved = db[name + '_features_td']  # name
-        patch_feature_data = collection_saved.OrderedDict()
+        # client = mongodb_connect('mongodb://' + args["db_host"] + ':27017')
+        # client.server_info()  # force connection, trigger error to be caught
+        # db = client.quip_comp
+        # collection_saved = db[name + '_features_td']  # name
+        # patch_feature_data = collection_saved.OrderedDict()
+
+        patch_feature_data = {}
         patch_feature_data['case_id'] = CASE_ID
         patch_feature_data['image_width'] = vals['image_width']
         patch_feature_data['image_height'] = vals['image_height']
@@ -430,7 +434,11 @@ def update_db(df, vals, name):
         patch_feature_data['b_cytoIntensityMean_segment_mean'] = m_b_cytoIntensityMean
         patch_feature_data['b_cytoIntensityMean_segment_std'] = std_b_cytoIntensityMean
         patch_feature_data['datetime'] = datetime.now()
+
+        print('patch_feature_data', patch_feature_data)
+
         # collection_saved.insert_one(patch_feature_data)
+
     except Exception as e:
         print('update_db: ', e)
         exit(1)
@@ -454,7 +462,7 @@ def calculate(data, is_patch):
             patch(osr, val['tile_minx'], val['tile_miny'], val['image_width'], val['tile_height'])
             df = val['df']
             update_db(df, val, 'patch')
-            exit(0)  # TODO: TESTING
+            exit(0)  # TODO: TEST ONE.
 
             # count += df.shape[0]
             # Series quantile
