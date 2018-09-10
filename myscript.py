@@ -397,7 +397,8 @@ def update_db(result, vals, name):
         patch_feature_data['user'] = USER_NAME
         patch_feature_data['tile_minx'] = vals['tile_minx']
         patch_feature_data['tile_miny'] = vals['tile_miny']
-        patch_feature_data['tile_size'] = vals['tile_size']
+        patch_feature_data['tile_width'] = vals['tile_width']
+        patch_feature_data['tile_height'] = vals['tile_height']
         patch_feature_data['Flatness_segment_mean'] = m_Flatness
         patch_feature_data['Flatness_segment_std'] = std_Flatness
         patch_feature_data['Perimeter_segment_mean'] = m_Perimeter
@@ -418,33 +419,38 @@ def update_db(result, vals, name):
         print('saveFeatures2MongoDB: ', e)
         exit(1)
 
-    # Do something with result
 
-
-def calculate(data, patch):
+def calculate(data, is_patch):
     """
     Mean and std of Perimeter, Flatness, Circularity,
     r_GradientMean, b_GradientMean, b_cytoIntensityMean, r_cytoIntensityMean.
     :param data:
-    :param patch: T/F (T=patch, F=patient)
+    :param is_patch: T/F (T=patch, F=patient)
     :return:
     """
 
-    if patch:
+    p = Path(os.path.join(SLIDE_DIR, (CASE_ID + '.svs')))
+    osr = OpenSlide(str(p))
+
+    if is_patch:
         # count = 0
         for key, val in data.items():
-            result = val['df']
-            update_db(result, val, 'patch')
+            patch(osr, val['tile_minx'], val['tile_miny'], val['image_width'], val['tile_height'])
+            exit(0)  # TODO: TESTING
+            # result = val['df']
+            # update_db(result, val, 'patch')
             # count += df.shape[0]
             # Series quantile
             # print(s.quantile([.25, .5, .75]))
 
-    if not patch:
+    if not is_patch:
         frames = []
         for key, val in data.items():
             frames.append(val['df'])
         result = pandas.concat(frames)
-        update_db(result, val, 'patient')
+        # update_db(result, val, 'patient')
+
+    osr.close()
 
 
 def test_db():
@@ -461,7 +467,25 @@ def test_db():
     except Exception as e:
         print('test_db: ', e)
         exit(1)
-    exit(0)
+
+
+def patch(osr, min_x, min_y, w, h):
+    """
+
+    :param osr:
+    :param min_x:
+    :param min_y:
+    :param w:
+    :param h:
+    :return:
+    """
+    try:
+        roi = osr.read_region((min_x, min_y), 0, (w, h))
+        print(type(roi))
+    except Exception as e:
+        print('Error reading region: ', min_x, min_y)
+        print(e)
+        exit(1)
 
 
 # constant variables
@@ -514,7 +538,9 @@ csv_data = get_csv_data(jfile_list)
 print('csv_data len: ', len(csv_data))  # NOTE: s/b less b/c we ignore empty data files.
 
 # Calculate!
-calculate(csv_data, False)
+# calculate(csv_data, False)
 calculate(csv_data, True)
+
+# patch(osr, min_x, min_y, w, h)
 
 exit(0)
