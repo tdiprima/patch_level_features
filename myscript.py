@@ -397,8 +397,8 @@ def update_db(df, vals, name):
     std_b_cytoIntensityMean = df['b_cytoIntensityMean'].std()
     std_r_cytoIntensityMean = df['r_cytoIntensityMean'].std()
 
-    nucleus_area = df['Perimeter']
-    percent_nuclear_material = compute_rnm(vals['tile_width'], vals['tile_height'], df)
+    nucleus_area = df['AreaInPixels'].sum()
+    percent_nuclear_material = compute_rnm(vals['tile_width'], vals['tile_height'], nucleus_area)
     print("ratio of nuclear material: ", percent_nuclear_material)
 
     try:
@@ -502,7 +502,6 @@ def patch(osr, min_x, min_y, w, h):
 
         grayscale_img = roi.convert('L')
         rgb_img = roi.convert('RGB')
-
         grayscale_img_matrix = np.array(grayscale_img)
         rgb_img_matrix = np.array(rgb_img)
 
@@ -522,11 +521,15 @@ def patch(osr, min_x, min_y, w, h):
         Hematoxylin_patch_mean = np.mean(Hematoxylin_img_matrix)
         Hematoxylin_patch_std = np.std(Hematoxylin_img_matrix)
 
-        grayscale_patch_10th_percentile = np.percentile(grayscale_img_matrix, 10)
-        grayscale_patch_25th_percentile = np.percentile(grayscale_img_matrix, 25)
-        grayscale_patch_50th_percentile = np.percentile(grayscale_img_matrix, 50)
-        grayscale_patch_75th_percentile = np.percentile(grayscale_img_matrix, 75)
-        grayscale_patch_90th_percentile = np.percentile(grayscale_img_matrix, 90)
+        print('grayscale_patch_mean', grayscale_patch_mean)
+        print('grayscale_patch_std', grayscale_patch_std)
+        print('Hematoxylin_patch_mean', Hematoxylin_patch_mean)
+        print('Hematoxylin_patch_std', Hematoxylin_patch_std)
+
+        percentiles = [10, 25, 50, 75, 90]
+        for i in range(len(percentiles)):
+            print("grayscale patch {} percentile: {}".format(percentiles[i],
+                                                             np.percentile(grayscale_img_matrix, percentiles[i])))
 
     except Exception as e:
         print('Error reading region: ', min_x, min_y)
@@ -551,16 +554,15 @@ def detect_bright_spots(gray):
     # Do something.
 
 
-def compute_rnm(w, h, df):
+def compute_rnm(width, height, total_polygon_area):
     """
     ratio of nuclear material
-    :param w:
-    :param h:
-    :param df:
+    :param width:
+    :param height:
+    :param total_polygon_area:
     :return:
     """
-    area = w * h
-    total_polygon_area = df['AreaInPixels'].sum()
+    area = width * height  # in pixels
     rnm = float(total_polygon_area / area)
     return rnm
 
