@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 import time
+import OpenSlide
 from datetime import datetime
 
 import pandas
@@ -430,7 +431,7 @@ def calculate(data, is_patch):
     """
 
     p = Path(os.path.join(SLIDE_DIR, (CASE_ID + '.svs')))
-    osr = OpenSlide(str(p))
+    osr = openslide.OpenSlide(str(p))
 
     if is_patch:
         # count = 0
@@ -480,8 +481,7 @@ def patch(osr, min_x, min_y, w, h):
     :return:
     """
     try:
-        roi = osr.read_region((min_x, min_y), 0, (w, h))
-        print(type(roi))
+        roi = osr.read_region((min_x, min_y), 0, (w, h))  # PIL Image
     except Exception as e:
         print('Error reading region: ', min_x, min_y)
         print(e)
