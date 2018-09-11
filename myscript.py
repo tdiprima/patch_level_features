@@ -372,9 +372,10 @@ def get_csv_data(files):
     return rtn_dict
 
 
-def update_db(df, vals, name):
+def update_db(osr, df, vals, name):
     """
 
+    :param osr:
     :param df:
     :param vals:
     :param name:
@@ -402,6 +403,11 @@ def update_db(df, vals, name):
     nucleus_area = df['AreaInPixels'].sum()
     percent_nuclear_material = compute_rnm(vals['tile_width'], vals['tile_height'], nucleus_area)
     print("ratio of nuclear material: ", percent_nuclear_material)
+
+    # Histology
+    histological_data = {}
+    histological_data = histology(osr, vals['tile_minx'], vals['tile_miny'], vals['image_width'], vals['tile_height'])
+    print('histological_data', histological_data)
 
     try:
         # client = mongodb_connect('mongodb://' + args["db_host"] + ':27017')
@@ -449,22 +455,20 @@ def calculate(data, is_patch):
     :param is_patch: T/F (T=patch, F=patient)
     :return:
     """
-    print('Calculating features...')
-    start_time = time.time()
-
     p = Path(os.path.join(SLIDE_DIR, (CASE_ID + '.svs')))
     print('Reading slide...')
     start_time = time.time()
     osr = openslide.OpenSlide(str(p))
     elapsed_time = time.time() - start_time
     print('Time it takes to read slide: ', elapsed_time)
+    start_time = time.time()  # reset
 
     if is_patch:
+        print('Calculating patch-level features...')
         # count = 0
         for key, val in data.items():
             df = val['df']
-            histology(osr, val['tile_minx'], val['tile_miny'], val['image_width'], val['tile_height'])
-            update_db(df, val, 'patch')
+            update_db(osr, df, val, 'patch')
             exit(0)  # TODO: TEST ONE.
 
             # count += df.shape[0]
@@ -472,11 +476,12 @@ def calculate(data, is_patch):
             # print(s.quantile([.25, .5, .75]))
 
     if not is_patch:
+        print('Calculating patient-level features...')
         frames = []
         for key, val in data.items():
             frames.append(val['df'])
         result = pandas.concat(frames)
-        update_db(result, val, 'patient')
+        update_db(osr, result, val, 'patient')
 
     osr.close()
 
@@ -511,6 +516,7 @@ def histology(osr, min_x, min_y, w, h):
     :param h:
     :return:
     """
+    histological_data = {}
     try:
         # read_region returns an RGBA Image (PIL)
         roi = osr.read_region((min_x, min_y), 0, (w, h))
@@ -536,20 +542,24 @@ def histology(osr, min_x, min_y, w, h):
         Hematoxylin_patch_mean = np.mean(Hematoxylin_img_matrix)
         Hematoxylin_patch_std = np.std(Hematoxylin_img_matrix)
 
-        print('grayscale_patch_mean', grayscale_patch_mean)
-        print('grayscale_patch_std', grayscale_patch_std)
-        print('Hematoxylin_patch_mean', Hematoxylin_patch_mean)
-        print('Hematoxylin_patch_std', Hematoxylin_patch_std)
+        histological_data['grayscale_patch_mean'] = grayscale_patch_mean
+        histological_data['grayscale_patch_std'] = grayscale_patch_std
+        histological_data['Hematoxylin_patch_mean'] = Hematoxylin_patch_mean
+        histological_data['Hematoxylin_patch_std'] = Hematoxylin_patch_std
 
         percentiles = [10, 25, 50, 75, 90]
         for i in range(len(percentiles)):
-            print("grayscale patch {} percentile: {}".format(percentiles[i],
-                                                             np.percentile(grayscale_img_matrix, percentiles[i])))
+            name = 'grayscale_patch_percentile_' + str(percentiles[i])
+            histological_data[name] = np.percentile(grayscale_img_matrix, percentiles[i])
+            # print("grayscale patch {} percentile: {}".format(percentiles[i],
+            #                                                  np.percentile(grayscale_img_matrix, percentiles[i])))
 
     except Exception as e:
         print('Error reading region: ', min_x, min_y)
         print(e)
         exit(1)
+
+    return histological_data
 
 
 def detect_bright_spots(gray):
@@ -632,8 +642,8 @@ csv_data = get_csv_data(jfile_list)
 # print('csv_data len: ', len(csv_data))  # NOTE: s/b less b/c we ignore empty data files.
 
 # Calculate!
-# calculate(csv_data, False)
 calculate(csv_data, True)
+calculate(csv_data, False)
 
 exit(0)
 
