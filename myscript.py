@@ -265,7 +265,7 @@ def get_poly_within(jfiles, tumor_list):
     temp = {}
     path_poly = {}
     rtn_jfiles = []
-    start_time = time.time()
+    # start_time = time.time()
     pos = len('-algmeta.json')
 
     # Collect data
@@ -315,9 +315,9 @@ def get_poly_within(jfiles, tumor_list):
                 rtn_jfiles.append(key)
                 # rtn_obj.update({key: val})
 
-    elapsed_time = time.time() - start_time
-    print('Runtime get_poly_within: ')
-    print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
+    # elapsed_time = time.time() - start_time
+    # print('Runtime get_poly_within: ')
+    # print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
     return rtn_jfiles
 
