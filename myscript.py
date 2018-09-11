@@ -372,10 +372,10 @@ def get_csv_data(files):
     return rtn_dict
 
 
-def update_db(osr, df, vals, name):
+def update_db(slide, df, vals, name):
     """
 
-    :param osr:
+    :param slide:
     :param df:
     :param vals:
     :param name:
@@ -402,10 +402,10 @@ def update_db(osr, df, vals, name):
     # Ratio of nuclear material
     nucleus_area = df['AreaInPixels'].sum()
     percent_nuclear_material = compute_rnm(vals['tile_width'], vals['tile_height'], nucleus_area)
-    print("ratio of nuclear material: ", percent_nuclear_material)
+    print("Ratio of nuclear material: ", percent_nuclear_material)
 
     # Histology
-    histological_data = histology(osr, vals['tile_minx'], vals['tile_miny'], vals['image_width'], vals['tile_height'])
+    histological_data = histology(slide, vals['tile_minx'], vals['tile_miny'], vals['tile_width'], vals['tile_height'])
     print('histological_data', json.dumps(histological_data, indent=4, sort_keys=True))
 
     try:
@@ -457,7 +457,7 @@ def calculate(data, is_patch):
     p = Path(os.path.join(SLIDE_DIR, (CASE_ID + '.svs')))
     print('Reading slide...')
     start_time = time.time()
-    osr = openslide.OpenSlide(str(p))
+    slide = openslide.OpenSlide(str(p))
     elapsed_time = time.time() - start_time
     print('Time it takes to read slide: ', elapsed_time)
     start_time = time.time()  # reset
@@ -467,7 +467,7 @@ def calculate(data, is_patch):
         # count = 0
         for key, val in data.items():
             df = val['df']
-            update_db(osr, df, val, 'patch')
+            update_db(slide, df, val, 'patch')
             exit(0)  # TODO: TEST ONE.
 
             # count += df.shape[0]
@@ -480,9 +480,9 @@ def calculate(data, is_patch):
         for key, val in data.items():
             frames.append(val['df'])
         result = pandas.concat(frames)
-        update_db(osr, result, val, 'patient')
+        update_db(slide, result, val, 'patient')
 
-    osr.close()
+    slide.close()
 
     elapsed_time = time.time() - start_time
     print('Runtime calculate: ')
@@ -505,60 +505,96 @@ def test_db():
         exit(1)
 
 
-def histology(osr, min_x, min_y, w, h):
+def rgb_to_stain(rgb_img_matrix, sizex, sizey):
+    """
+    RGB to stain color space conversion
+    :param rgb_img_matrix:
+    :param sizex:
+    :param sizey:
+    :return:
+    """
+    hed_title_img = separate_stains(rgb_img_matrix, hed_from_rgb)
+    hematoxylin_img_array = [[0 for x in range(sizex)] for y in range(sizey)]
+    for index1, row in enumerate(hed_title_img):
+        for index2, pixel in enumerate(row):
+            hematoxylin_img_array[index1][index2] = pixel[0]
+
+    return hematoxylin_img_array
+
+
+def tile_operations(tile, type, name_prefix, w, h):
     """
 
-    :param osr:
+    :param tile:
+    :param type:
+    :param name_prefix:
+    :param w:
+    :param h:
+    :return:
+    """
+    data = {}
+
+    img = tile.convert(type)
+
+    # img to array
+    img_array = np.array(img)
+
+    if name_prefix == 'hematoxylin':
+        # Convert rgb to stain color space
+        img_array = rgb_to_stain(img_array, w, h)
+
+    # average of the array elements
+    tile_mean = np.mean(img_array)
+    data[name_prefix + '_patch_mean'] = tile_mean
+
+    # standard deviation of the array elements
+    tile_std = np.std(img_array)
+    data[name_prefix + '_patch_std'] = tile_std
+
+    percentiles = [10, 25, 50, 75, 90]
+    for i in range(len(percentiles)):
+        name = name_prefix + '_patch_percentile_' + str(percentiles[i])
+        data[name] = np.percentile(img_array, percentiles[i])
+        # print(name_prefix + " patch {} percentile: {}".format(percentiles[i],
+        # np.percentile(img_array, percentiles[i])))
+
+    return data
+
+
+def histology(slide, min_x, min_y, w, h):
+    """
+
+    :param slide:
     :param min_x:
     :param min_y:
     :param w:
     :param h:
     :return:
     """
-    histological_data = {}
+    rtn_obj = {}
     try:
         # read_region returns an RGBA Image (PIL)
-        roi = osr.read_region((min_x, min_y), 0, (w, h))
+        tile = slide.read_region((min_x, min_y), 0, (w, h))
 
-        grayscale_img = roi.convert('L')
-        rgb_img = roi.convert('RGB')
-        grayscale_img_matrix = np.array(grayscale_img)
-        rgb_img_matrix = np.array(rgb_img)
+        # convert image and perform calculations
+        a = tile_operations(tile, 'L', 'grayscale', w, h)
+        b = tile_operations(tile, 'RGB', 'hematoxylin', w, h)
+        c = {}
 
-        grayscale_patch_mean = np.mean(grayscale_img_matrix)
-        grayscale_patch_std = np.std(grayscale_img_matrix)
+        for (key, value) in a.items():
+            c.update({key: value})
 
-        # Stain separation matrix
-        # hed_from_rgb: Hematoxylin + Eosin + DAB
-        hed_title_img = separate_stains(rgb_img_matrix, hed_from_rgb)
+        for (key, value) in b.items():
+            c.update({key: value})
 
-        max1 = np.max(hed_title_img)
-        min1 = np.min(hed_title_img)
-
-        Hematoxylin_img_matrix = hed_title_img[:, :, 0]
-        Hematoxylin_img_matrix = ((Hematoxylin_img_matrix - min1) * 255 / (max1 - min1)).astype(np.uint8)
-
-        Hematoxylin_patch_mean = np.mean(Hematoxylin_img_matrix)
-        Hematoxylin_patch_std = np.std(Hematoxylin_img_matrix)
-
-        histological_data['grayscale_patch_mean'] = grayscale_patch_mean
-        histological_data['grayscale_patch_std'] = grayscale_patch_std
-        histological_data['Hematoxylin_patch_mean'] = Hematoxylin_patch_mean
-        histological_data['Hematoxylin_patch_std'] = Hematoxylin_patch_std
-
-        percentiles = [10, 25, 50, 75, 90]
-        for i in range(len(percentiles)):
-            name = 'grayscale_patch_percentile_' + str(percentiles[i])
-            histological_data[name] = np.percentile(grayscale_img_matrix, percentiles[i])
-            # print("grayscale patch {} percentile: {}".format(percentiles[i],
-            #                                                  np.percentile(grayscale_img_matrix, percentiles[i])))
+        rtn_obj = c
 
     except Exception as e:
         print('Error reading region: ', min_x, min_y)
         print(e)
         exit(1)
 
-    return histological_data
+    return rtn_obj
 
 
 def detect_bright_spots(gray):
@@ -588,6 +624,8 @@ def compute_rnm(width, height, total_polygon_area):
     """
     area = width * height  # in pixels
     rnm = float(total_polygon_area / area)
+    # Bridge is calculating area of polygon (computer_polygon.area), but area is in spreadsheet
+    # percent_nuclear_material = float((nucleus_area / patch_polygon_area) * 100)
     return rnm
 
 
@@ -642,7 +680,6 @@ csv_data = get_csv_data(jfile_list)
 
 # Calculate!
 calculate(csv_data, True)
-calculate(csv_data, False)
+# calculate(csv_data, False)
 
 exit(0)
-
