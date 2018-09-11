@@ -231,7 +231,7 @@ def get_data_files():
             folders.append(ppath)
 
     folders.sort()
-    print('subfolders: ', len(folders))
+    # print('subfolders: ', len(folders))
 
     json_files = []
     csv_files = []
@@ -245,8 +245,8 @@ def get_data_files():
             elif name.endswith('csv'):
                 csv_files.append(ppath)
 
-    print('json_files: ', len(json_files))
-    print('csv_files: ', len(csv_files))
+    # print('json_files: ', len(json_files))
+    # print('csv_files: ', len(csv_files))
 
     json_files.sort()
     csv_files.sort()
@@ -260,8 +260,8 @@ def get_poly_within(jfiles, tumor_list):
     :param tumor_list:
     :return:
     """
-    print('files len: ', len(jfiles))
-    print('tumor_list len: ', len(tumor_list))
+    # print('files len: ', len(jfiles))
+    # print('tumor_list len: ', len(tumor_list))
     temp = {}
     path_poly = {}
     rtn_jfiles = []
@@ -405,16 +405,15 @@ def update_db(osr, df, vals, name):
     print("ratio of nuclear material: ", percent_nuclear_material)
 
     # Histology
-    histological_data = {}
     histological_data = histology(osr, vals['tile_minx'], vals['tile_miny'], vals['image_width'], vals['tile_height'])
-    print('histological_data', histological_data)
+    print('histological_data', json.dumps(histological_data, indent=4, sort_keys=True))
 
     try:
         # client = mongodb_connect('mongodb://' + args["db_host"] + ':27017')
         # client.server_info()  # force connection, trigger error to be caught
         # db = client.quip_comp
         # collection_saved = db[name + '_features_td']  # name
-        patch_feature_data = {}  # Remove when enabling db write.
+        patch_feature_data = {}  # TODO: Remove when enabling db write.
         # patch_feature_data = collection_saved.OrderedDict()
         patch_feature_data['case_id'] = CASE_ID
         patch_feature_data['image_width'] = vals['image_width']
