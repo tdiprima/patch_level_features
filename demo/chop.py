@@ -36,7 +36,7 @@ with open('x63488_y49152-algmeta.json', 'r') as f:
             # print((minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy))
             bbox = BoundingBox([(minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy)])
             tile = slide.read_region((minx, miny), 0, (tile_size, tile_size))
-            tile.save('tile' + count, ".jpg")
+            tile.save('tile' + str(count) + '.png', "png")
 
             # print(bbox)
             df = pandas.read_csv('x63488_y49152-features.csv')
