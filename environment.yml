@@ -9,6 +9,7 @@ dependencies:
   - opencv
   - openslide-python
   - pandas
+  - planar
   - pymongo
   - scikit-image
   - scipy

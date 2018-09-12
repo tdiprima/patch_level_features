@@ -12,6 +12,7 @@ import cv2
 import numpy as np
 import openslide
 import pandas
+from planar import BoundingBox
 from pymongo import MongoClient, errors
 from shapely.geometry import Polygon, Point, MultiPoint
 from skimage.color import separate_stains, hed_from_rgb
@@ -372,12 +373,12 @@ def get_csv_data(files):
     return rtn_dict
 
 
-def update_db(slide, df, vals, name):
+def update_db(slide, df, val, name):
     """
 
     :param slide:
     :param df:
-    :param vals:
+    :param val:
     :param name:
     :return:
     """
@@ -401,11 +402,11 @@ def update_db(slide, df, vals, name):
 
     # Ratio of nuclear material
     nucleus_area = df['AreaInPixels'].sum()
-    percent_nuclear_material = compute_rnm(vals['tile_width'], vals['tile_height'], nucleus_area)
+    percent_nuclear_material = compute_rnm(val['tile_width'], val['tile_height'], nucleus_area)
     print("Ratio of nuclear material: ", percent_nuclear_material)
 
     # Histology
-    histological_data = histology(slide, vals['tile_minx'], vals['tile_miny'], vals['tile_width'], vals['tile_height'])
+    histological_data = histology(slide, val['tile_minx'], val['tile_miny'], val['tile_width'], val['tile_height'])
     print('histological_data', json.dumps(histological_data, indent=4, sort_keys=True))
 
     try:
@@ -416,13 +417,13 @@ def update_db(slide, df, vals, name):
         patch_feature_data = {}  # TODO: Remove when enabling db write.
         # patch_feature_data = collection_saved.OrderedDict()
         patch_feature_data['case_id'] = CASE_ID
-        patch_feature_data['image_width'] = vals['image_width']
-        patch_feature_data['image_height'] = vals['image_height']
+        patch_feature_data['image_width'] = val['image_width']
+        patch_feature_data['image_height'] = val['image_height']
         patch_feature_data['user'] = USER_NAME
-        patch_feature_data['tile_minx'] = vals['tile_minx']
-        patch_feature_data['tile_miny'] = vals['tile_miny']
-        patch_feature_data['tile_width'] = vals['tile_width']
-        patch_feature_data['tile_height'] = vals['tile_height']
+        patch_feature_data['tile_minx'] = val['tile_minx']
+        patch_feature_data['tile_miny'] = val['tile_miny']
+        patch_feature_data['tile_width'] = val['tile_width']
+        patch_feature_data['tile_height'] = val['tile_height']
         patch_feature_data['Flatness_segment_mean'] = m_Flatness
         patch_feature_data['Flatness_segment_std'] = std_Flatness
         patch_feature_data['Perimeter_segment_mean'] = m_Perimeter
@@ -467,12 +468,10 @@ def calculate(data, is_patch):
         # count = 0
         for key, val in data.items():
             df = val['df']
+            # print('df.shape', df.shape[0])
+
             update_db(slide, df, val, 'patch')
             exit(0)  # TODO: TEST ONE.
-
-            # count += df.shape[0]
-            # Series quantile
-            # print(s.quantile([.25, .5, .75]))
 
     if not is_patch:
         print('Calculating patient-level features...')
@@ -629,6 +628,62 @@ def compute_rnm(width, height, total_polygon_area):
     return rnm
 
 
+def doTiles(data):
+    for key, val in data.items():
+        df = val['df']
+        width = val['patch_width']
+        height = val['patch_height']
+        minx = val['patch_minx']
+        miny = val['patch_miny']
+
+        cols = width / TILE_SIZE
+        rows = height / TILE_SIZE
+
+        data_complete = {}
+
+        count = 0
+        for x in range(1, (int(cols) + 1)):
+            for y in range(1, (int(rows) + 1)):
+                data = {}
+                count += 1
+                # minx = minx + (x * tile_size)
+                # miny = miny + (y * tile_size)
+                minx = x * TILE_SIZE
+                miny = y * TILE_SIZE
+                minx = minx + val['patch_minx']
+                miny = miny + val['patch_miny']
+                maxx = minx + TILE_SIZE
+                maxy = miny + TILE_SIZE
+                # print((minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy))
+                bbox = BoundingBox([(minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy)])
+                data[count] = {'bbox': bbox}
+                # print(bbox)
+                df = pandas.read_csv('x63488_y49152-features.csv')
+                row_list = []
+                for index, row in df.iterrows():
+                    poly_data = row['Polygon']
+                    tmp_str = str(poly_data)
+                    tmp_str = tmp_str.replace('[', '')
+                    tmp_str = tmp_str.replace(']', '')
+                    split_str = tmp_str.split(':')
+                    # Get list of points
+                    for i in range(0, len(split_str) - 1, 2):
+                        a = float(split_str[i])
+                        b = float(split_str[i + 1])
+                        # Normalize points
+                        point = [a, b]
+                        if bbox.contains_point(point):
+                            # do something and break
+                            row_list.append(row)
+                            break
+                    # print('row_list', row_list)
+
+                # data_complete.update({data[count]: {'bbox': bbox, 'row_list': row_list}})
+                if row_list:
+                    data[count] = {'bbox': bbox, 'row_list': row_list}
+                    data_complete.update(data)
+
+
 # constant variables
 WORK_DIR = "/data1/tdiprima/dataset"
 CSV_FILE_PATH = "nfs004:/data/shared/bwang/composite_dataset"
@@ -651,6 +706,7 @@ if not len(sys.argv) > 1:
 
 CASE_ID = args["slide_name"]
 USER_NAME = args["user_name"]
+TILE_SIZE = args["tile_size"]
 
 SLIDE_DIR = os.path.join(WORK_DIR, CASE_ID) + os.sep
 CSV_REL_PATHS = get_file_list(CASE_ID, 'config/csv_file_path.list')
@@ -678,7 +734,7 @@ jfile_list = get_poly_within(JSON_FILES, tumor_poly_list)
 csv_data = get_csv_data(jfile_list)
 # print('csv_data len: ', len(csv_data))  # NOTE: s/b less b/c we ignore empty data files.
 
-# Calculate!
+# Calculate
 calculate(csv_data, True)
 # calculate(csv_data, False)
 
