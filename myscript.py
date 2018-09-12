@@ -12,7 +12,7 @@ import cv2
 import numpy as np
 import openslide
 import pandas
-from planar import BoundingBox
+from planar import BoundingBox, Vec2
 from pymongo import MongoClient, errors
 from shapely.geometry import Polygon, Point, MultiPoint
 from skimage.color import separate_stains, hed_from_rgb
@@ -656,10 +656,9 @@ def doTiles(data):
                 maxy = miny + TILE_SIZE
                 # print((minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy))
                 bbox = BoundingBox([(minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy)])
-                data[count] = {'bbox': bbox}
                 # print(bbox)
-                df = pandas.read_csv('x63488_y49152-features.csv')
                 row_list = []
+                df2 = pandas.DataFrame()
                 for index, row in df.iterrows():
                     poly_data = row['Polygon']
                     tmp_str = str(poly_data)
@@ -670,17 +669,18 @@ def doTiles(data):
                     for i in range(0, len(split_str) - 1, 2):
                         a = float(split_str[i])
                         b = float(split_str[i + 1])
-                        # Normalize points
-                        point = [a, b]
+                        # point = [a, b]
+                        point = Vec2(a, b)
                         if bbox.contains_point(point):
-                            # do something and break
                             row_list.append(row)
+                            df2.append(row)
                             break
                     # print('row_list', row_list)
 
                 # data_complete.update({data[count]: {'bbox': bbox, 'row_list': row_list}})
                 if row_list:
-                    data[count] = {'bbox': bbox, 'row_list': row_list}
+                    # data[count] = {'bbox': bbox, 'row_list': row_list}
+                    data[count] = {'bbox': bbox, 'df2': df2}
                     data_complete.update(data)
 
 

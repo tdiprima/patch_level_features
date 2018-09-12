@@ -1,6 +1,7 @@
 import json
 import pandas
-from planar import BoundingBox
+from planar import BoundingBox, Vec2
+import openslide
 from shapely.geometry import Polygon, Point, MultiPoint
 
 tile_size = 512
@@ -17,6 +18,7 @@ with open('x63488_y49152-algmeta.json', 'r') as f:
     rows = height / tile_size
 
     data_complete = {}
+    slide = openslide.OpenSlide('/data1/tdiprima/dataset/PC_051_0_1/PC_051_0_1.svs')
 
     count = 0
     for x in range(1, (int(cols) + 1)):
@@ -33,10 +35,13 @@ with open('x63488_y49152-algmeta.json', 'r') as f:
             maxy = miny + tile_size
             # print((minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy))
             bbox = BoundingBox([(minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy)])
-            data[count] = {'bbox': bbox}
+            tile = slide.read_region((minx, miny), 0, (tile_size, tile_size))
+            tile.save('tile' + count, ".jpg")
+
             # print(bbox)
             df = pandas.read_csv('x63488_y49152-features.csv')
             row_list = []
+            df2 = pandas.DataFrame()
             for index, row in df.iterrows():
                 poly_data = row['Polygon']
                 tmp_str = str(poly_data)
@@ -47,17 +52,21 @@ with open('x63488_y49152-algmeta.json', 'r') as f:
                 for i in range(0, len(split_str) - 1, 2):
                     a = float(split_str[i])
                     b = float(split_str[i + 1])
-                    # Normalize points
-                    point = [a, b]
+                    # point = [a, b]
+                    point = Vec2(a, b)
                     if bbox.contains_point(point):
                         # do something and break
                         row_list.append(row)
+                        df2.append(row)
+                        print(bbox)
                         break
                 # print('row_list', row_list)
-
             # data_complete.update({data[count]: {'bbox': bbox, 'row_list': row_list}})
             if row_list:
                 data[count] = {'bbox': bbox, 'row_list': row_list}
                 data_complete.update(data)
 
-print(data_complete)
+# print(data_complete)
+# df2['Perimeter'].mean()
+for k, v in data_complete.items():
+    print(k)
