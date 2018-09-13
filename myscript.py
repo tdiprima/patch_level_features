@@ -268,7 +268,6 @@ def get_poly_within(jfiles, tumor_list):
     # rtn_jfiles = []
     rtn_obj = {}
     # start_time = time.time()
-    pos = len('-algmeta.json')
 
     # Collect data
     z = set()
@@ -338,48 +337,60 @@ def get_poly_within(jfiles, tumor_list):
     return rtn_obj
 
 
-def get_csv_data(files):
+def get_csv_data(jfile_objs, CSV_FILES):
     """
     Get data
-    :param files:
+    :param jfile_objs:
+    :param CSV_FILES
     :return:
     """
     start_time = time.time()
     obj_map = {}
+    obj_map1 = {}
     rtn_dict = {}
 
-    for ff in files:
-        jname = ff + '-algmeta.json'  # '-features.csv'
-        with open(jname, 'r') as f:
-            # Read JSON data into the json_dict variable
-            json_dict = json.load(f)
-            str = json_dict['out_file_prefix']
-            imw = json_dict['image_width']
-            imh = json_dict['image_height']
-            tile_height = json_dict['tile_height']
-            tile_width = json_dict['tile_width']
-            tile_minx = json_dict['tile_minx']
-            tile_miny = json_dict['tile_miny']
+    for k, v in jfile_objs.items():
+        filelist = []
+        for ff in CSV_FILES:
+            if k in ff:
+                filelist.append(ff)
 
-            cname = ff + '-features.csv'
+        data_obj = {'filelist': filelist, "image_width": v['image_width'], "image_height": v['image_height'],
+                    "tile_height": v['tile_height'], "tile_width": v['tile_width'], "tile_minx": v['tile_minx'],
+                    "tile_miny": v['tile_miny']}
+        obj_map.update({k: data_obj})
 
-            df = pandas.read_csv(cname)
+    print('obj_map', len(obj_map))
+
+    for k, v in obj_map.items():
+        frames = []
+        for ff in v['filelist']:
+            df = pandas.read_csv(ff)
             # print('df.shape[0]: ', df.shape[0])
             if df.empty:
+                print('empty!')
+                print(len(v['filelist']))
+                print(k)
+                print(ff)
                 continue
             else:
                 # new = old[['A', 'C', 'D']].copy()
-                newdf = df[
+                df1 = df[
                     ['AreaInPixels', 'Perimeter', 'Flatness', 'Circularity', 'r_GradientMean', 'b_GradientMean',
                      'b_cytoIntensityMean', 'r_cytoIntensityMean', 'r_IntensityMean', 'r_cytoGradientMean',
                      'Polygon']].copy()
-                data_obj = {"df": newdf, "image_width": imw, "image_height": imh,
-                            "tile_height": tile_height,
-                            "tile_width": tile_width, "tile_minx": tile_minx, "tile_miny": tile_miny}
-                obj_map[ff] = data_obj
+                frames.append(df1)
+
+        if frames:
+            result = pandas.concat(frames)
+            data_obj1 = {'df': result, "image_width": v['image_width'], "image_height": v['image_height'],
+                         "tile_height": v['tile_height'], "tile_width": v['tile_width'], "tile_minx": v['tile_minx'],
+                         "tile_miny": v['tile_miny']}
+
+            obj_map1[ff] = data_obj1
+
         # Add to return variable
-        rtn_dict.update(obj_map)
-        f.close()
+        rtn_dict.update(obj_map1)
 
     elapsed_time = time.time() - start_time
     print('Runtime get_csv_data: ')
@@ -484,9 +495,8 @@ def calculate(data, is_patch):
         for key, val in data.items():
             df = val['df']
             # print('df.shape', df.shape[0])
-
             update_db(slide, df, val, 'patch')
-            exit(0)  # TODO: TEST ONE.
+            exit(0)  # TODO: TESTING ONE.
 
     if not is_patch:
         print('Calculating patient-level features...')
@@ -699,25 +709,6 @@ def doTiles(data):
                     data_complete.update(data)
 
 
-def find_unique_tile_list(file_list):
-    """
-    The sets module is used here for removing duplicates from a sequence.
-    :param file_list:
-    :return:
-    """
-    min_point_list = []
-    for jfile in file_list:
-        with open(jfile, 'r') as f:
-            json_dict = json.load(f)
-            tile_minx = json_dict['tile_minx']
-            tile_miny = json_dict['tile_miny']
-            point = [tile_minx, tile_miny]
-            min_point_list.append(point)
-    tmp_set = set(map(tuple, min_point_list))
-    map_output = map(list, tmp_set)
-    return map_output
-
-
 # constant variables
 WORK_DIR = "/data1/tdiprima/dataset"
 DATA_FILE_FOLDER = "nfs004:/data/shared/bwang/composite_dataset"
@@ -763,15 +754,15 @@ tumor_poly_list = markup_to_polygons(tumor_mark_list)
 JSON_FILES, CSV_FILES = get_data_files()
 
 # Identify only the files within the tumor regions
-objs = get_poly_within(JSON_FILES, tumor_poly_list)
-print('get_poly_within len: ', len(objs))
+jfile_objs = get_poly_within(JSON_FILES, tumor_poly_list)
+print('get_poly_within len: ', len(jfile_objs))
 
 # Get data
-# csv_data = get_csv_data(jfile_list)
-# print('csv_data len: ', len(csv_data))  # NOTE: s/b less b/c we ignore empty data files.
+csv_data = get_csv_data(jfile_objs, CSV_FILES)
+print('csv_data len: ', len(csv_data))
 
 # Calculate
-# calculate(csv_data, True)
+calculate(csv_data, True)
 # calculate(csv_data, False)
 
 exit(0)
