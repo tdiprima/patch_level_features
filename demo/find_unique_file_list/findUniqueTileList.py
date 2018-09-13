@@ -1,0 +1,52 @@
+import json
+import os
+import csv
+
+
+def findUniqueTileList(local_img_folder, prefix_list):
+    tile_min_point_list = []
+    for prefix in prefix_list:
+        detail_local_folder = os.path.join(local_img_folder, prefix)
+        if os.path.isdir(detail_local_folder) and len(os.listdir(detail_local_folder)) > 0:
+            json_filename_list = [f for f in os.listdir(detail_local_folder) if f.endswith('.json')]
+            for json_filename in json_filename_list:
+                with open(os.path.join(detail_local_folder, json_filename)) as f:
+                    data = json.load(f)
+                    tile_minx = data["tile_minx"]
+                    tile_miny = data["tile_miny"]
+                    point = [tile_minx, tile_miny]
+                    tile_min_point_list.append(point)
+    tmp_set = set(map(tuple, tile_min_point_list))
+    unique_tile_min_point_list = map(list, tmp_set)
+    return unique_tile_min_point_list
+
+
+def findPrefixList(case_id):
+    prefix_list = []
+    input_file = "case_id_prefix.txt"
+    prefix_file = os.path.join(my_home, input_file)
+    print('prefix_file', prefix_file)
+    with open(prefix_file, 'r') as my_file:
+        reader = csv.reader(my_file, delimiter=',')
+        my_list = list(reader)
+        for each_row in my_list:
+            file_path = each_row[0]  # path
+            if file_path.find(case_id) != -1:  # find it!
+                perfix_path = each_row[0]
+                position_1 = perfix_path.rfind('/') + 1
+                position_2 = len(perfix_path)
+                prefix = perfix_path[position_1:position_2]
+                prefix_list.append(prefix)
+    return prefix_list
+
+
+case_id = 'PC_051_0_1'
+prefix_list = findPrefixList(case_id)
+my_home = "/data1/tdiprima"
+local_dataset_folder = os.path.join(my_home, 'dataset')
+local_img_folder = os.path.join(local_dataset_folder, case_id)
+
+unique_tile_min_point_list = findUniqueTileList(local_img_folder, prefix_list)
+
+for index, tile_min_point in enumerate(unique_tile_min_point_list):
+    print(index, tile_min_point)
