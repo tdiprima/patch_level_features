@@ -23,8 +23,9 @@ def findUniqueTileList(local_img_folder, prefix_list):
                     point = [tile_minx, tile_miny]
                     tile_min_point_list.append(point)
     tmp_set = set(map(tuple, tile_min_point_list))
-    print('tmp_set', tmp_set)
-    unique_tile_min_point_list = map(list, tmp_set)
+    # print('tmp_set', tmp_set)  # tuples all over the place
+    unique_tile_min_point_list = map(list, tmp_set)  # nice, neat set of stuff, and numbered!
+    print('huh? print list', list)
     print('unique_tile_min_point_list', unique_tile_min_point_list)
     return unique_tile_min_point_list
 
