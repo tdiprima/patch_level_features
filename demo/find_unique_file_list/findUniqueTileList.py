@@ -3,9 +3,9 @@ import os
 import csv
 
 
-def findUniqueTileList(local_img_folder, prefix_list):
+def find_unique_tile_list(local_img_folder, prefix_list):
     """
-
+    The sets module is used here for removing duplicates from a sequence.
     :param local_img_folder:
     :param prefix_list:
     :return:
@@ -25,12 +25,11 @@ def findUniqueTileList(local_img_folder, prefix_list):
     tmp_set = set(map(tuple, tile_min_point_list))
     # print('tmp_set', tmp_set)  # tuples all over the place
     unique_tile_min_point_list = map(list, tmp_set)  # nice, neat set of stuff, and numbered!
-    print('huh? print list', list)
     print('unique_tile_min_point_list', unique_tile_min_point_list)
     return unique_tile_min_point_list
 
 
-def findPrefixList(my_home, case_id):
+def find_prefix_list(my_home, case_id):
     """
 
     :param my_home:
@@ -58,11 +57,11 @@ def findPrefixList(my_home, case_id):
 case_id = 'PC_051_0_1'
 my_home = "/data1/tdiprima"
 
-prefix_list = findPrefixList(my_home, case_id)
+prefix_list = find_prefix_list(my_home, case_id)
 local_dataset_folder = os.path.join(my_home, 'dataset')
 local_img_folder = os.path.join(local_dataset_folder, case_id)
 
-unique_tile_min_point_list = findUniqueTileList(local_img_folder, prefix_list)
+unique_tile_min_point_list = find_unique_tile_list(local_img_folder, prefix_list)
 
 for index, tile_min_point in enumerate(unique_tile_min_point_list):
     print(index, tile_min_point)
