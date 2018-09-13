@@ -49,16 +49,17 @@ def find_prefix_list(my_home, case_id):
         for each_row in my_list:
             file_path = each_row[0]  # path
             if file_path.find(case_id) != -1:  # find it!
-                perfix_path = each_row[0]
-                position_1 = perfix_path.rfind('/') + 1
-                position_2 = len(perfix_path)
-                prefix = perfix_path[position_1:position_2]
+                prefix_path = each_row[0]
+                position_1 = prefix_path.rfind('/') + 1
+                position_2 = len(prefix_path)
+                prefix = prefix_path[position_1:position_2]
+                print('prefix', prefix)
                 prefix_list.append(prefix)
     return prefix_list
 
 
 case_id = 'PC_051_0_1'
-my_home = "/data1/tdiprima"
+my_home = '/data1/tdiprima'
 
 prefix_list = find_prefix_list(my_home, case_id)
 local_dataset_folder = os.path.join(my_home, 'dataset')
