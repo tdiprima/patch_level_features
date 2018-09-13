@@ -185,10 +185,13 @@ def coordinates_to_polygons(coordinates_list):
     return m_poly_list
 
 
-def string_to_polygon(poly_data, imw, imh):
+def string_to_polygon(poly_data, imw, imh, normalize):
     """
     Convert Polygon string to polygon
     :param poly_data:
+    :param imw:
+    :param imh:
+    :param normalize:
     :return:
     """
     points_list = []
@@ -204,8 +207,11 @@ def string_to_polygon(poly_data, imw, imh):
         for i in range(0, len(split_str) - 1, 2):
             a = float(split_str[i])
             b = float(split_str[i + 1])
-            # Normalize points
-            point = [a / float(imw), b / float(imh)]
+            if normalize:
+                # Normalize points
+                point = [a / float(imw), b / float(imh)]
+            else:
+                point = [a, b]
             m_point = Point(point)
             points_list.append(m_point)
         # Create a Polygon
@@ -361,6 +367,7 @@ def get_csv_data(jfile_objs, CSV_FILES):
         obj_map.update({k: data_obj})
 
     print('obj_map', len(obj_map))
+    print('Aggregating csv data...')
 
     for k, v in obj_map.items():
         frames = []
@@ -368,10 +375,10 @@ def get_csv_data(jfile_objs, CSV_FILES):
             df = pandas.read_csv(ff)
             # print('df.shape[0]: ', df.shape[0])
             if df.empty:
-                print('empty!')
-                print(len(v['filelist']))
-                print(k)
-                print(ff)
+                # print('empty!')
+                # print(len(v['filelist']))
+                # print(k)
+                # print(ff)
                 continue
             else:
                 # new = old[['A', 'C', 'D']].copy()
@@ -469,16 +476,15 @@ def update_db(slide, df, val, name):
         # collection_saved.insert_one(patch_feature_data)
 
     except Exception as e:
-        print('update_db: ', e)
+        print('Error in update_db: ', e)
         exit(1)
 
 
-def calculate(data, is_patch):
+def calculate(tile_data):
     """
     Mean and std of Perimeter, Flatness, Circularity,
     r_GradientMean, b_GradientMean, b_cytoIntensityMean, r_cytoIntensityMean.
-    :param data:
-    :param is_patch: T/F (T=patch, F=patient)
+    :param tile_data:
     :return:
     """
     p = Path(os.path.join(SLIDE_DIR, (CASE_ID + '.svs')))
@@ -489,22 +495,39 @@ def calculate(data, is_patch):
     print('Time it takes to read slide: ', elapsed_time)
     start_time = time.time()  # reset
 
-    if is_patch:
-        print('Calculating patch-level features...')
-        # count = 0
-        for key, val in data.items():
-            df = val['df']
-            # print('df.shape', df.shape[0])
-            update_db(slide, df, val, 'patch')
-            exit(0)  # TODO: TESTING ONE.
+    print('Calculating patch-level features...')
+    data = do_tiles(tile_data)
 
-    if not is_patch:
-        print('Calculating patient-level features...')
-        frames = []
-        for key, val in data.items():
-            frames.append(val['df'])
-        result = pandas.concat(frames)
-        update_db(slide, result, val, 'patient')
+    for key, val in data.items():
+        df = val['df']
+        # print('df.shape', df.shape[0])
+        # Mean (the simple average of the numbers)
+        m_Perimeter = df['Perimeter'].mean()
+        m_Flatness = df['Flatness'].mean()
+        m_Circularity = df['Circularity'].mean()
+        m_r_GradientMean = df['r_GradientMean'].mean()
+        m_b_GradientMean = df['b_GradientMean'].mean()
+        m_b_cytoIntensityMean = df['b_cytoIntensityMean'].mean()
+        m_r_cytoIntensityMean = df['r_cytoIntensityMean'].mean()
+
+        # Standard Deviation
+        std_Perimeter = df['Perimeter'].std()
+        std_Flatness = df['Flatness'].std()
+        std_Circularity = df['Circularity'].std()
+        std_r_GradientMean = df['r_GradientMean'].std()
+        std_b_GradientMean = df['b_GradientMean'].std()
+        std_b_cytoIntensityMean = df['b_cytoIntensityMean'].std()
+        std_r_cytoIntensityMean = df['r_cytoIntensityMean'].std()
+
+        # Ratio of nuclear material
+        nucleus_area = df['AreaInPixels'].sum()
+        percent_nuclear_material = compute_rnm(val['tile_width'], val['tile_height'], nucleus_area)
+        print("Ratio of nuclear material: ", percent_nuclear_material)
+
+        # Histology
+        histological_data = histology(slide, val['tile_minx'], val['tile_miny'], val['tile_width'], val['tile_height'])
+        print('histological_data', json.dumps(histological_data, indent=4, sort_keys=True))
+        exit(0)  # TODO: TESTING ONE.
 
     slide.close()
 
@@ -653,19 +676,15 @@ def compute_rnm(width, height, total_polygon_area):
     return rnm
 
 
-def doTiles(data):
+def do_tiles(data):
+    data_complete = {}
     for key, val in data.items():
         df = val['df']
-        width = val['patch_width']
-        height = val['patch_height']
-        minx = val['patch_minx']
-        miny = val['patch_miny']
-
+        width = val['tile_width']
+        height = val['tile_height']
         cols = width / TILE_SIZE
         rows = height / TILE_SIZE
-
-        data_complete = {}
-
+        # data_complete = {}
         count = 0
         for x in range(1, (int(cols) + 1)):
             for y in range(1, (int(rows) + 1)):
@@ -675,31 +694,38 @@ def doTiles(data):
                 # miny = miny + (y * tile_size)
                 minx = x * TILE_SIZE
                 miny = y * TILE_SIZE
-                minx = minx + val['patch_minx']
-                miny = miny + val['patch_miny']
+                minx = minx + val['tile_minx']
+                miny = miny + val['tile_miny']
                 maxx = minx + TILE_SIZE
                 maxy = miny + TILE_SIZE
                 # print((minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy))
-                bbox = BoundingBox([(minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy)])
+                # bbox = BoundingBox([(minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy)])
                 # print(bbox)
+                bbox = Polygon([(minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy), (minx, miny)])
                 row_list = []
                 df2 = pandas.DataFrame()
                 for index, row in df.iterrows():
                     poly_data = row['Polygon']
-                    tmp_str = str(poly_data)
-                    tmp_str = tmp_str.replace('[', '')
-                    tmp_str = tmp_str.replace(']', '')
-                    split_str = tmp_str.split(':')
+                    poly = string_to_polygon(poly_data, val['image_width'], val['image_height'], False)
+                    # TODO:
+                    if poly.within(bbox):
+                        print('yes')
+                    else:
+                        print('no')
+                    # tmp_str = str(poly_data)
+                    # tmp_str = tmp_str.replace('[', '')
+                    # tmp_str = tmp_str.replace(']', '')
+                    # split_str = tmp_str.split(':')
                     # Get list of points
-                    for i in range(0, len(split_str) - 1, 2):
-                        a = float(split_str[i])
-                        b = float(split_str[i + 1])
-                        # point = [a, b]
-                        point = Vec2(a, b)
-                        if bbox.contains_point(point):
-                            row_list.append(row)
-                            df2.append(row)
-                            break
+                    # for i in range(0, len(split_str) - 1, 2):
+                    #     a = float(split_str[i])
+                    #     b = float(split_str[i + 1])
+                    #     # point = [a, b]
+                    #     point = Vec2(a, b)
+                    #     if bbox.contains_point(point):
+                    #         row_list.append(row)
+                    #         df2.append(row)
+                    #         break
                     # print('row_list', row_list)
 
                 # data_complete.update({data[count]: {'bbox': bbox, 'row_list': row_list}})
@@ -707,6 +733,8 @@ def doTiles(data):
                     # data[count] = {'bbox': bbox, 'row_list': row_list}
                     data[count] = {'bbox': bbox, 'df2': df2}
                     data_complete.update(data)
+
+    return data_complete
 
 
 # constant variables
@@ -762,7 +790,6 @@ csv_data = get_csv_data(jfile_objs, CSV_FILES)
 print('csv_data len: ', len(csv_data))
 
 # Calculate
-calculate(csv_data, True)
-# calculate(csv_data, False)
+calculate(csv_data)
 
 exit(0)
