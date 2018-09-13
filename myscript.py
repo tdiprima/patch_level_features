@@ -265,11 +265,14 @@ def get_poly_within(jfiles, tumor_list):
     # print('tumor_list len: ', len(tumor_list))
     temp = {}
     path_poly = {}
-    rtn_jfiles = []
+    # rtn_jfiles = []
+    rtn_obj = {}
     # start_time = time.time()
     pos = len('-algmeta.json')
 
     # Collect data
+    z = set()
+    count = 0
     for jfile in jfiles:
         with open(jfile, 'r') as f:
             # Read JSON data into the json_dict variable
@@ -281,46 +284,58 @@ def get_poly_within(jfiles, tumor_list):
             tile_width = json_dict['tile_width']
             tile_minx = json_dict['tile_minx']
             tile_miny = json_dict['tile_miny']
-            inc_x = tile_minx + tile_width
-            inc_y = tile_miny + tile_height
-            # Create polygon for comparison
-            point1 = Point(float(tile_minx) / float(imw), float(tile_miny) / float(imh))
-            point2 = Point(float(inc_x) / float(imw), float(tile_miny) / float(imh))
-            point3 = Point(float(inc_x) / float(imw), float(inc_y) / float(imh))
-            point4 = Point(float(tile_minx) / float(imw), float(inc_y) / float(imh))
-            point5 = Point(float(tile_minx) / float(imw), float(tile_miny) / float(imh))
-            m = MultiPoint([point1, point2, point3, point4, point5])
-            polygon = Polygon(m)
-            # Map data file location (prefix) to bbox polygon
-            path_poly[f.name[:-pos]] = polygon
+            fp = json_dict['out_file_prefix']
+
+            item = 'x' + str(tile_minx) + '_' + 'y' + str(tile_miny)
+            if item not in z:  # If the object is not in the list yet...
+                inc_x = tile_minx + tile_width
+                inc_y = tile_miny + tile_height
+                # Create polygon for comparison
+                point1 = Point(float(tile_minx) / float(imw), float(tile_miny) / float(imh))
+                point2 = Point(float(inc_x) / float(imw), float(tile_miny) / float(imh))
+                point3 = Point(float(inc_x) / float(imw), float(inc_y) / float(imh))
+                point4 = Point(float(tile_minx) / float(imw), float(inc_y) / float(imh))
+                point5 = Point(float(tile_minx) / float(imw), float(tile_miny) / float(imh))
+                m = MultiPoint([point1, point2, point3, point4, point5])
+                polygon = Polygon(m)
+                # Map data file location (prefix) to bbox polygon
+                # path_poly[f.name[:-pos]] = polygon
+                path_poly[item] = {'poly': polygon, 'image_width': imw, 'image_height': imh, 'tile_width': tile_width,
+                                   'tile_height': tile_height, 'tile_minx': tile_minx, 'tile_miny': tile_miny,
+                                   'out_file_prefix': fp}
+            else:
+                count += 1
+
+            z.add(item)
+
         f.close()
         temp.update(path_poly)
 
-    count = 0
+    print('dupes', count)
+    print('len', len(temp))
+
     for tumor_roi in tumor_list:
         for key, val in temp.items():
             gotone = False
-            if val.within(tumor_roi):
+            p = val['poly']
+            if p.within(tumor_roi):
                 gotone = True
-                count += 1
-            elif val.intersects(tumor_roi):
+            elif p.intersects(tumor_roi):
                 gotone = True
-                count += 1
-            elif tumor_roi.within(val):
+            elif tumor_roi.within(p):
                 gotone = True
-                count += 1
-            elif tumor_roi.intersects(val):
+            elif tumor_roi.intersects(p):
                 gotone = True
-                count += 1
             if gotone:
-                rtn_jfiles.append(key)
-                # rtn_obj.update({key: val})
+                # print('val', val)
+                rtn_obj.update({key: val})
 
     # elapsed_time = time.time() - start_time
     # print('Runtime get_poly_within: ')
     # print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
-    return rtn_jfiles
+    # return rtn_jfiles
+    return rtn_obj
 
 
 def get_csv_data(files):
@@ -684,6 +699,25 @@ def doTiles(data):
                     data_complete.update(data)
 
 
+def find_unique_tile_list(file_list):
+    """
+    The sets module is used here for removing duplicates from a sequence.
+    :param file_list:
+    :return:
+    """
+    min_point_list = []
+    for jfile in file_list:
+        with open(jfile, 'r') as f:
+            json_dict = json.load(f)
+            tile_minx = json_dict['tile_minx']
+            tile_miny = json_dict['tile_miny']
+            point = [tile_minx, tile_miny]
+            min_point_list.append(point)
+    tmp_set = set(map(tuple, min_point_list))
+    map_output = map(list, tmp_set)
+    return map_output
+
+
 # constant variables
 WORK_DIR = "/data1/tdiprima/dataset"
 DATA_FILE_FOLDER = "nfs004:/data/shared/bwang/composite_dataset"
@@ -729,15 +763,15 @@ tumor_poly_list = markup_to_polygons(tumor_mark_list)
 JSON_FILES, CSV_FILES = get_data_files()
 
 # Identify only the files within the tumor regions
-jfile_list = get_poly_within(JSON_FILES, tumor_poly_list)
-# print('jfile_list len: ', len(jfile_list))
+objs = get_poly_within(JSON_FILES, tumor_poly_list)
+print('get_poly_within len: ', len(objs))
 
 # Get data
-csv_data = get_csv_data(jfile_list)
+# csv_data = get_csv_data(jfile_list)
 # print('csv_data len: ', len(csv_data))  # NOTE: s/b less b/c we ignore empty data files.
 
 # Calculate
-calculate(csv_data, True)
+# calculate(csv_data, True)
 # calculate(csv_data, False)
 
 exit(0)
