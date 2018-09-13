@@ -24,7 +24,7 @@ def find_unique_tile_list(local_img_folder, prefix_list):
                     tile_min_point_list.append(point)
     tmp_set = set(map(tuple, tile_min_point_list))
     # print('tmp_set', tmp_set)  # tuples all over the place
-    unique_tile_min_point_list = map(list, tmp_set)  # nice, neat set of stuff, and numbered!
+    unique_tile_min_point_list = map(list, tmp_set)  # nice, neat set of stuff
     print('unique_tile_min_point_list', unique_tile_min_point_list)
     return unique_tile_min_point_list
 
@@ -64,4 +64,4 @@ local_img_folder = os.path.join(local_dataset_folder, case_id)
 unique_tile_min_point_list = find_unique_tile_list(local_img_folder, prefix_list)
 
 for index, tile_min_point in enumerate(unique_tile_min_point_list):
-    print(index, tile_min_point)
+    print(index, ': ', tile_min_point)
