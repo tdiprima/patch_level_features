@@ -710,7 +710,7 @@ TILE_SIZE = args["tile_size"]
 DB_HOST = args["db_host"]
 
 SLIDE_DIR = os.path.join(WORK_DIR, CASE_ID) + os.sep
-DATA_FILE_SUBFOLDERS = get_file_list(CASE_ID, 'config/csv_file_path.list')
+DATA_FILE_SUBFOLDERS = get_file_list(CASE_ID, 'config/data_file_path.list')
 # print('DATA_FILE_SUBFOLDERS', DATA_FILE_SUBFOLDERS)
 
 # Fetch data.
