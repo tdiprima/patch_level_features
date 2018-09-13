@@ -25,7 +25,7 @@ def find_unique_tile_list(local_img_folder, prefix_list):
     tmp_set = set(map(tuple, tile_min_point_list))
     # print('tmp_set', tmp_set)  # tuples all over the place
     unique_tile_min_point_list = map(list, tmp_set)  # nice, neat set of stuff
-    print('unique_tile_min_point_list', unique_tile_min_point_list)
+    print('len unique_tile_min_point_list', len(unique_tile_min_point_list))
     return unique_tile_min_point_list
 
 
