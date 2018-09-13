@@ -24,9 +24,12 @@ def find_unique_tile_list(local_img_folder, prefix_list):
                     tile_min_point_list.append(point)
     tmp_set = set(map(tuple, tile_min_point_list))
     # print('tmp_set', tmp_set)  # tuples all over the place
-    unique_tile_min_point_list = map(list, tmp_set)  # nice, neat set of stuff
-    print('len unique_tile_min_point_list', len(unique_tile_min_point_list))
-    return unique_tile_min_point_list
+    map_output = map(list, tmp_set)  # nice, neat set of stuff
+
+    # list_map_output = list(map_output)
+    # print(len(list_map_output))
+
+    return map_output
 
 
 def find_prefix_list(my_home, case_id):
@@ -64,4 +67,4 @@ local_img_folder = os.path.join(local_dataset_folder, case_id)
 unique_tile_min_point_list = find_unique_tile_list(local_img_folder, prefix_list)
 
 for index, tile_min_point in enumerate(unique_tile_min_point_list):
-    print(index, ': ', tile_min_point)
+    print(index, tile_min_point)
