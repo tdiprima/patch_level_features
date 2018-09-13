@@ -4,6 +4,12 @@ import csv
 
 
 def findUniqueTileList(local_img_folder, prefix_list):
+    """
+
+    :param local_img_folder:
+    :param prefix_list:
+    :return:
+    """
     tile_min_point_list = []
     for prefix in prefix_list:
         detail_local_folder = os.path.join(local_img_folder, prefix)
@@ -17,11 +23,19 @@ def findUniqueTileList(local_img_folder, prefix_list):
                     point = [tile_minx, tile_miny]
                     tile_min_point_list.append(point)
     tmp_set = set(map(tuple, tile_min_point_list))
+    print('tmp_set', tmp_set)
     unique_tile_min_point_list = map(list, tmp_set)
+    print('unique_tile_min_point_list', unique_tile_min_point_list)
     return unique_tile_min_point_list
 
 
-def findPrefixList(case_id):
+def findPrefixList(my_home, case_id):
+    """
+
+    :param my_home:
+    :param case_id:
+    :return:
+    """
     prefix_list = []
     input_file = "case_id_prefix.txt"
     prefix_file = os.path.join(my_home, input_file)
@@ -41,8 +55,9 @@ def findPrefixList(case_id):
 
 
 case_id = 'PC_051_0_1'
-prefix_list = findPrefixList(case_id)
 my_home = "/data1/tdiprima"
+
+prefix_list = findPrefixList(my_home, case_id)
 local_dataset_folder = os.path.join(my_home, 'dataset')
 local_img_folder = os.path.join(local_dataset_folder, case_id)
 
