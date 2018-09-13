@@ -68,8 +68,8 @@ def copy_src_data(dest):
     :return:
     """
     # Get list of csv files containing features for this case_id
-    for csv_dir1 in CSV_REL_PATHS:
-        source_dir = os.path.join(CSV_FILE_PATH, csv_dir1)
+    for csv_dir1 in DATA_FILE_SUBFOLDERS:
+        source_dir = os.path.join(DATA_FILE_FOLDER, csv_dir1)
         # copy all *.json and *features.csv files
         m_args = list(["rsync", "-ar", "--include", "*features.csv", "--include", "*.json"])
         # m_args = list(["rsync", "-avz", "--include", "*features.csv", "--include", "*.json"])
@@ -82,7 +82,7 @@ def copy_src_data(dest):
     my_file = Path(os.path.join(dest, (CASE_ID + '.svs')))
     if not my_file.is_file():
         svs_list = get_file_list(CASE_ID, 'config/image_path.list')
-        svs_path = os.path.join(SVS_IMAGE_PATH, svs_list[0])
+        svs_path = os.path.join(SVS_IMAGE_FOLDER, svs_list[0])
         print("executing scp", svs_path, dest)
         subprocess.check_call(['scp', svs_path, dest])
 
@@ -686,8 +686,8 @@ def doTiles(data):
 
 # constant variables
 WORK_DIR = "/data1/tdiprima/dataset"
-CSV_FILE_PATH = "nfs004:/data/shared/bwang/composite_dataset"
-SVS_IMAGE_PATH = "nfs001:/data/shared/tcga_analysis/seer_data/images"
+DATA_FILE_FOLDER = "nfs004:/data/shared/bwang/composite_dataset"
+SVS_IMAGE_FOLDER = "nfs001:/data/shared/tcga_analysis/seer_data/images"
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
@@ -710,7 +710,8 @@ TILE_SIZE = args["tile_size"]
 DB_HOST = args["db_host"]
 
 SLIDE_DIR = os.path.join(WORK_DIR, CASE_ID) + os.sep
-CSV_REL_PATHS = get_file_list(CASE_ID, 'config/csv_file_path.list')
+DATA_FILE_SUBFOLDERS = get_file_list(CASE_ID, 'config/csv_file_path.list')
+# print('DATA_FILE_SUBFOLDERS', DATA_FILE_SUBFOLDERS)
 
 # Fetch data.
 # assure_path_exists(SLIDE_DIR)
