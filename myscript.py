@@ -96,7 +96,7 @@ def get_tumor_markup(user_name):
     tumor_markup_list = []
     execution_id = (user_name + "_Tumor_Region")
     try:
-        client = mongodb_connect('mongodb://' + args["db_host"] + ':27017')
+        client = mongodb_connect('mongodb://' + DB_HOST + ':27017')
         client.server_info()  # force connection, trigger error to be caught
         db = client.quip
         coll = db.objects
@@ -410,7 +410,7 @@ def update_db(slide, df, val, name):
     print('histological_data', json.dumps(histological_data, indent=4, sort_keys=True))
 
     try:
-        # client = mongodb_connect('mongodb://' + args["db_host"] + ':27017')
+        # client = mongodb_connect('mongodb://' + DB_HOST + ':27017')
         # client.server_info()  # force connection, trigger error to be caught
         # db = client.quip_comp
         # collection_saved = db[name + '_features_td']  # name
@@ -491,7 +491,7 @@ def calculate(data, is_patch):
 def test_db():
     try:
         name = 'test'
-        client = mongodb_connect('mongodb://' + args["db_host"] + ':27017')
+        client = mongodb_connect('mongodb://' + DB_HOST + ':27017')
         client.server_info()  # force connection, trigger error to be caught
         db = client.quip_comp
         collection_saved = db[name + '_features_td']  # name
@@ -707,6 +707,7 @@ if not len(sys.argv) > 1:
 CASE_ID = args["slide_name"]
 USER_NAME = args["user_name"]
 TILE_SIZE = args["tile_size"]
+DB_HOST = args["db_host"]
 
 SLIDE_DIR = os.path.join(WORK_DIR, CASE_ID) + os.sep
 CSV_REL_PATHS = get_file_list(CASE_ID, 'config/csv_file_path.list')
