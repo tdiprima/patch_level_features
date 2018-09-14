@@ -343,7 +343,7 @@ def get_poly_within(jfiles, tumor_list):
     return rtn_obj
 
 
-def get_csv_data(jfile_objs, CSV_FILES):
+def aggregate_data(jfile_objs, CSV_FILES):
     """
     Get data
     :param jfile_objs:
@@ -400,7 +400,7 @@ def get_csv_data(jfile_objs, CSV_FILES):
         rtn_dict.update(obj_map1)
 
     elapsed_time = time.time() - start_time
-    print('Runtime get_csv_data: ')
+    print('Runtime aggregate_data: ')
     print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
     return rtn_dict
@@ -495,38 +495,42 @@ def calculate(tile_data):
     print('Time it takes to read slide: ', elapsed_time)
     start_time = time.time()  # reset
 
-    print('Calculating patch-level features...')
-    data = do_tiles(tile_data)
+    # Iterate through tile data
+    for key, val in tile_data.items():
 
-    for key, val in data.items():
-        df = val['df']
-        # print('df.shape', df.shape[0])
-        # Mean (the simple average of the numbers)
-        m_Perimeter = df['Perimeter'].mean()
-        m_Flatness = df['Flatness'].mean()
-        m_Circularity = df['Circularity'].mean()
-        m_r_GradientMean = df['r_GradientMean'].mean()
-        m_b_GradientMean = df['b_GradientMean'].mean()
-        m_b_cytoIntensityMean = df['b_cytoIntensityMean'].mean()
-        m_r_cytoIntensityMean = df['r_cytoIntensityMean'].mean()
+        # Create patches
+        data = do_tiles(val)
 
-        # Standard Deviation
-        std_Perimeter = df['Perimeter'].std()
-        std_Flatness = df['Flatness'].std()
-        std_Circularity = df['Circularity'].std()
-        std_r_GradientMean = df['r_GradientMean'].std()
-        std_b_GradientMean = df['b_GradientMean'].std()
-        std_b_cytoIntensityMean = df['b_cytoIntensityMean'].std()
-        std_r_cytoIntensityMean = df['r_cytoIntensityMean'].std()
+        # For each patch, write data.
 
-        # Ratio of nuclear material
-        nucleus_area = df['AreaInPixels'].sum()
-        percent_nuclear_material = compute_rnm(val['tile_width'], val['tile_height'], nucleus_area)
-        print("Ratio of nuclear material: ", percent_nuclear_material)
-
-        # Histology
-        histological_data = histology(slide, val['tile_minx'], val['tile_miny'], val['tile_width'], val['tile_height'])
-        print('histological_data', json.dumps(histological_data, indent=4, sort_keys=True))
+        # df = val['df']
+        # # print('df.shape', df.shape[0])
+        # # Mean (the simple average of the numbers)
+        # m_Perimeter = df['Perimeter'].mean()
+        # m_Flatness = df['Flatness'].mean()
+        # m_Circularity = df['Circularity'].mean()
+        # m_r_GradientMean = df['r_GradientMean'].mean()
+        # m_b_GradientMean = df['b_GradientMean'].mean()
+        # m_b_cytoIntensityMean = df['b_cytoIntensityMean'].mean()
+        # m_r_cytoIntensityMean = df['r_cytoIntensityMean'].mean()
+        #
+        # # Standard Deviation
+        # std_Perimeter = df['Perimeter'].std()
+        # std_Flatness = df['Flatness'].std()
+        # std_Circularity = df['Circularity'].std()
+        # std_r_GradientMean = df['r_GradientMean'].std()
+        # std_b_GradientMean = df['b_GradientMean'].std()
+        # std_b_cytoIntensityMean = df['b_cytoIntensityMean'].std()
+        # std_r_cytoIntensityMean = df['r_cytoIntensityMean'].std()
+        #
+        # # Ratio of nuclear material
+        # nucleus_area = df['AreaInPixels'].sum()
+        # percent_nuclear_material = compute_rnm(val['tile_width'], val['tile_height'], nucleus_area)
+        # print("Ratio of nuclear material: ", percent_nuclear_material)
+        #
+        # # Histology
+        # histological_data = histology(slide, val['tile_minx'], val['tile_miny'], val['tile_width'], val['tile_height'])
+        # print('histological_data', json.dumps(histological_data, indent=4, sort_keys=True))
         exit(0)  # TODO: TESTING ONE.
 
     slide.close()
@@ -677,62 +681,77 @@ def compute_rnm(width, height, total_polygon_area):
 
 
 def do_tiles(data):
+    """
+    Divide tile into patches
+    :param data:
+    :return:
+    """
+    print('Dividing patch into tiles...')
     data_complete = {}
-    for key, val in data.items():
-        df = val['df']
-        width = val['tile_width']
-        height = val['tile_height']
-        cols = width / TILE_SIZE
-        rows = height / TILE_SIZE
-        # data_complete = {}
-        count = 0
-        for x in range(1, (int(cols) + 1)):
-            for y in range(1, (int(rows) + 1)):
-                data = {}
-                count += 1
-                # minx = minx + (x * tile_size)
-                # miny = miny + (y * tile_size)
-                minx = x * TILE_SIZE
-                miny = y * TILE_SIZE
-                minx = minx + val['tile_minx']
-                miny = miny + val['tile_miny']
-                maxx = minx + TILE_SIZE
-                maxy = miny + TILE_SIZE
-                # print((minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy))
-                # bbox = BoundingBox([(minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy)])
-                # print(bbox)
-                bbox = Polygon([(minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy), (minx, miny)])
-                row_list = []
-                df2 = pandas.DataFrame()
-                for index, row in df.iterrows():
-                    poly_data = row['Polygon']
-                    poly = string_to_polygon(poly_data, val['image_width'], val['image_height'], False)
-                    # TODO:
-                    if poly.within(bbox):
-                        print('yes')
-                    else:
-                        print('no')
-                    # tmp_str = str(poly_data)
-                    # tmp_str = tmp_str.replace('[', '')
-                    # tmp_str = tmp_str.replace(']', '')
-                    # split_str = tmp_str.split(':')
-                    # Get list of points
-                    # for i in range(0, len(split_str) - 1, 2):
-                    #     a = float(split_str[i])
-                    #     b = float(split_str[i + 1])
-                    #     # point = [a, b]
-                    #     point = Vec2(a, b)
-                    #     if bbox.contains_point(point):
-                    #         row_list.append(row)
-                    #         df2.append(row)
-                    #         break
-                    # print('row_list', row_list)
+    start_time = time.time()
 
-                # data_complete.update({data[count]: {'bbox': bbox, 'row_list': row_list}})
-                if row_list:
-                    # data[count] = {'bbox': bbox, 'row_list': row_list}
-                    data[count] = {'bbox': bbox, 'df2': df2}
-                    data_complete.update(data)
+    patch_num = 0
+    df = data['df']
+    width = data['tile_width']
+    height = data['tile_height']
+    cols = width / PATCH_SIZE
+    rows = height / PATCH_SIZE
+    # data_complete = {}
+
+    # Divide tile into patches
+    for x in range(1, (int(cols) + 1)):
+        for y in range(1, (int(rows) + 1)):
+            d = {}
+            patch_num += 1
+            print('patch_num', patch_num)
+            # minx = minx + (x * tile_size)
+            # miny = miny + (y * tile_size)
+            minx = x * PATCH_SIZE
+            miny = y * PATCH_SIZE
+            minx = minx + data['tile_minx']
+            miny = miny + data['tile_miny']
+            maxx = minx + PATCH_SIZE
+            maxy = miny + PATCH_SIZE
+            print((minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy))
+            # bbox = BoundingBox([(minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy)])
+            # print(bbox)
+            bbox = Polygon([(minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy), (minx, miny)])
+            row_list = []
+            df2 = pandas.DataFrame()
+            # Figure out which polygons (data rows) belong to which patch
+            for index, row in df.iterrows():
+                xy = row['Polygon']
+                polygon_shape = string_to_polygon(xy, data['image_width'], data['image_height'], False)
+
+                # Accumulate information
+                if polygon_shape.within(bbox) or polygon_shape.intersects(bbox):
+                    row_list.append(row)
+                    df2.append(row)
+
+                # tmp_str = str(poly_data)
+                # tmp_str = tmp_str.replace('[', '')
+                # tmp_str = tmp_str.replace(']', '')
+                # split_str = tmp_str.split(':')
+                # Get list of points
+                # for i in range(0, len(split_str) - 1, 2):
+                #     a = float(split_str[i])
+                #     b = float(split_str[i + 1])
+                #     # point = [a, b]
+                #     point = Vec2(a, b)
+                #     if bbox.contains_point(point):
+                #         row_list.append(row)
+                #         df2.append(row)
+                #         break
+                # print('row_list', row_list)
+
+            # data_complete.update({data[patch_num]: {'bbox': bbox, 'row_list': row_list}})
+            d[patch_num] = {'df2': df2, 'patch_minx': minx, 'patch_miny': miny,
+                            'tile_minx': data['tile_minx'], 'tile_miny': data['tile_miny']}
+            data_complete.update(d)
+
+    elapsed_time = time.time() - start_time
+    print('Runtime do_tiles: ')
+    print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
     return data_complete
 
@@ -747,7 +766,7 @@ ap = argparse.ArgumentParser()
 ap.add_argument("-s", "--slide_name", help="svs image name")
 ap.add_argument("-u", "--user_name", help="user who identified tumor regions")
 ap.add_argument("-b", "--db_host", help="database host")
-ap.add_argument("-t", "--tile_size", type=int, help="tile size")
+ap.add_argument("-p", "--patch_size", type=int, help="patch size")
 args = vars(ap.parse_args())
 print(args)
 
@@ -759,7 +778,7 @@ if not len(sys.argv) > 1:
 
 CASE_ID = args["slide_name"]
 USER_NAME = args["user_name"]
-TILE_SIZE = args["tile_size"]
+PATCH_SIZE = args["patch_size"]
 DB_HOST = args["db_host"]
 
 SLIDE_DIR = os.path.join(WORK_DIR, CASE_ID) + os.sep
@@ -786,7 +805,7 @@ jfile_objs = get_poly_within(JSON_FILES, tumor_poly_list)
 print('get_poly_within len: ', len(jfile_objs))
 
 # Get data
-csv_data = get_csv_data(jfile_objs, CSV_FILES)
+csv_data = aggregate_data(jfile_objs, CSV_FILES)
 print('csv_data len: ', len(csv_data))
 
 # Calculate
