@@ -406,12 +406,11 @@ def aggregate_data(jfile_objs, CSV_FILES):
     return rtn_dict
 
 
-def get_doc(slide, patch_data, patch_index):
+def get_mongo_doc(slide, patch_data):
     """
     Return a default mongo doc
     :param slide:
     :param patch_data:
-    :param patch_index:
     :return:
     """
     mpp_x = 0.0
@@ -427,24 +426,29 @@ def get_doc(slide, patch_data, patch_index):
         print('Slide property error')
         exit(1)
 
-    width, height = slide.dimensions
+    image_width, image_height = slide.dimensions
+
+    # Ratio of nuclear material
+    percent_nuclear_material = float((patch_data['patch_polygon_area'] / (PATCH_SIZE * PATCH_SIZE)) * 100)
+    print("Ratio of nuclear material: ", percent_nuclear_material)
+
+    patch_index = patch_data['patch_num']
 
     mydoc = {
         "case_id": CASE_ID,
-        "image_width": width,
-        "image_height": height,
+        "image_width": image_width,
+        "image_height": image_height,
         "mpp_x": mpp_x,
         "mpp_y": mpp_y,
         "user": USER_NAME,
+        "tumorFlag": "tumor",
         "patch_index": patch_index,
         "patch_min_x_pixel": patch_data['patch_minx'],
         "patch_min_y_pixel": patch_data['patch_miny'],
         "patch_size": PATCH_SIZE,
         "patch_polygon_area": patch_data['patch_polygon_area'],
-        "patch_area_selected_percentage": 0.0,
-        "tumorFlag": "tumor",
-        "nucleus_area": 0.0,
-        "percent_nuclear_material": 0.0,
+        "percent_nuclear_material": percent_nuclear_material,
+        # "patch_area_selected_percentage": 0.0,
         "grayscale_patch_mean": 0.0,
         "grayscale_patch_std": 0.0,
         "Hematoxylin_patch_mean": 0.0,
@@ -479,7 +483,7 @@ def get_doc(slide, patch_data, patch_index):
 
 def update_db(slide, patch_data):
     """
-    Write data.
+    Write data, per patch.
     :param slide:
     :param patch_data:
     :return:
@@ -487,19 +491,18 @@ def update_db(slide, patch_data):
 
     df = patch_data['df']
 
-    mydoc = get_doc(slide, patch_data, patch_data['patch_num'])
+    mydoc = get_mongo_doc(slide, patch_data)
+
+    # read_region returns an RGBA Image (PIL)
+    patch = slide.read_region((patch_data['patch_minx'], patch_data['patch_miny']), 0, (PATCH_SIZE, PATCH_SIZE))
+
+    # Histology
+    mydoc = patch_operations(patch, mydoc)
+
     if df.empty:
         print('mydoc', json.dumps(mydoc, indent=4, sort_keys=True))
         # x = mycol.insert_one(mydoc)
     else:
-        # Ratio of nuclear material
-        # TODO: FIX
-        percent_nuclear_material = compute_rnm(PATCH_SIZE, PATCH_SIZE, nucleus_area)
-        print("Ratio of nuclear material: ", percent_nuclear_material)
-
-        # Histology
-        histological_data = histology(slide, patch_data['patch_minx'], patch_data['patch_miny'], PATCH_SIZE, PATCH_SIZE)
-        print('histological_data', json.dumps(histological_data, indent=4, sort_keys=True))
 
         try:
             # client = mongodb_connect('mongodb://' + DB_HOST + ':27017')
@@ -508,17 +511,6 @@ def update_db(slide, patch_data):
             # mycol = db[name + '_features_td']  # name
             # patch_feature_data = collection_saved.OrderedDict()
 
-            mydoc.patch_area_selected_percentage = 0.0
-            mydoc.nucleus_area = 0.0
-            mydoc.percent_nuclear_material = 0.0
-            mydoc.grayscale_patch_mean = 0.0
-            mydoc.grayscale_patch_std = 0.0
-            mydoc.Hematoxylin_patch_mean = 0.0
-            mydoc.Hematoxylin_patch_std = 0.0
-            mydoc.grayscale_segment_mean = "n/a"
-            mydoc.grayscale_segment_std = "n/a"
-            mydoc.Hematoxylin_segment_mean = "n/a"
-            mydoc.Hematoxylin_segment_std = "n/a"
             mydoc.Flatness_segment_mean = df['Flatness'].mean()
             mydoc.Flatness_segment_std = df['Flatness'].std()
             mydoc.Perimeter_segment_mean = df['Perimeter'].mean()
@@ -608,10 +600,38 @@ def rgb_to_stain(rgb_img_matrix, sizex, sizey):
     return hematoxylin_img_array
 
 
-def tile_operations(tile, type, name_prefix, w, h):
+def patch_operations(patch, mydoc):
+    # Convert to grayscale
+    img = patch.convert('L')
+    # img to array
+    img_array = np.array(img)
+    # Intensity for all pixels, divided by num pixels
+    mydoc.grayscale_patch_mean = np.mean(img_array)
+    mydoc.grayscale_patch_std = np.std(img_array)
+    # Intensity for all pixels inside segmented objects...
+    # mydoc.grayscale_segment_mean = "n/a"
+    # mydoc.grayscale_segment_std = "n/a"
+
+    # Convert to RGB
+    img = patch.convert('RGB')
+    img_array = np.array(img)
+    hed_title_img = separate_stains(img_array, hed_from_rgb)
+    max1 = np.max(hed_title_img)
+    min1 = np.min(hed_title_img)
+    Hematoxylin_img_matrix = hed_title_img[:, :, 0]
+    Hematoxylin_img_matrix = ((Hematoxylin_img_matrix - min1) * 255 / (max1 - min1)).astype(np.uint8)
+    mydoc.Hematoxylin_patch_mean = np.mean(Hematoxylin_img_matrix)
+    mydoc.Hematoxylin_patch_std = np.std(Hematoxylin_img_matrix)
+    # mydoc.Hematoxylin_segment_mean = "n/a"
+    # mydoc.Hematoxylin_segment_std = "n/a"
+
+    return mydoc
+
+
+def tile_operations(patch, type, name_prefix, w, h):
     """
 
-    :param tile:
+    :param patch:
     :param type:
     :param name_prefix:
     :param w:
@@ -620,7 +640,7 @@ def tile_operations(tile, type, name_prefix, w, h):
     """
     data = {}
 
-    img = tile.convert(type)
+    img = patch.convert(type)
 
     # img to array
     img_array = np.array(img)
@@ -630,12 +650,12 @@ def tile_operations(tile, type, name_prefix, w, h):
         img_array = rgb_to_stain(img_array, w, h)
 
     # average of the array elements
-    tile_mean = np.mean(img_array)
-    data[name_prefix + '_patch_mean'] = tile_mean
+    patch_mean = np.mean(img_array)
+    data[name_prefix + '_patch_mean'] = patch_mean
 
     # standard deviation of the array elements
-    tile_std = np.std(img_array)
-    data[name_prefix + '_patch_std'] = tile_std
+    patch_std = np.std(img_array)
+    data[name_prefix + '_patch_std'] = patch_std
 
     percentiles = [10, 25, 50, 75, 90]
     for i in range(len(percentiles)):
@@ -698,20 +718,6 @@ def detect_bright_spots(gray):
     thresh = cv2.threshold(blurred, 200, 255, cv2.THRESH_BINARY)[1]
 
     # Do something.
-
-
-def compute_rnm(width, height, total_polygon_area):
-    """
-    ratio of nuclear material
-    :param width:
-    :param height:
-    :param total_polygon_area:
-    :return:
-    """
-    area = width * height  # in pixels
-    rnm = float(total_polygon_area / area)
-    # percent_nuclear_material = float((nucleus_area / patch_polygon_area) * 100)
-    return rnm
 
 
 def do_tiles(data, slide):
