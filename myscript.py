@@ -555,7 +555,7 @@ def calculate(tile_data):
     for key, val in tile_data.items():
         # Create patches
         do_tiles(val, slide)
-        exit(0)
+        exit(0)  # TESTING ONE.
 
     slide.close()
 
