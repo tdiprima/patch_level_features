@@ -474,8 +474,8 @@ def get_mongo_doc(slide, patch_data):
         "Elongation_segment_mean": "n/a",
         "Elongation_segment_std": "n/a",
         "tile_minx": patch_data['tile_minx'],
-        "tile_miny": patch_data['tile_miny'],
-        "datetime": datetime.now()
+        "tile_miny": patch_data['tile_miny']
+        # , "datetime": datetime.now()
     }
 
     return mydoc
@@ -500,42 +500,39 @@ def update_db(slide, patch_data):
     mydoc = patch_operations(patch, mydoc)
 
     if df.empty:
-        print('mydoc', json.dumps(mydoc, indent=4, sort_keys=True))
+        mycol = {}
         # x = mycol.insert_one(mydoc)
     else:
+        mydoc['Flatness_segment_mean'] = df['Flatness'].mean()
+        mydoc['Flatness_segment_std'] = df['Flatness'].std()
+        mydoc['Perimeter_segment_mean'] = df['Perimeter'].mean()
+        mydoc['Perimeter_segment_std'] = df['Perimeter'].std()
+        mydoc['Circularity_segment_mean'] = df['Circularity'].mean()
+        mydoc['Circularity_segment_std'] = df['Circularity'].std()
+        mydoc['r_GradientMean_segment_mean'] = df['r_GradientMean'].mean()
+        mydoc['r_GradientMean_segment_std'] = df['r_GradientMean'].std()
+        mydoc['b_GradientMean_segment_mean'] = df['b_GradientMean'].mean()
+        mydoc['b_GradientMean_segment_std'] = df['b_GradientMean'].std()
+        mydoc['r_cytoIntensityMean_segment_mean'] = df['r_cytoIntensityMean'].mean()
+        mydoc['r_cytoIntensityMean_segment_std'] = df['r_cytoIntensityMean'].std()
+        mydoc['b_cytoIntensityMean_segment_mean'] = df['b_cytoIntensityMean'].mean()
+        mydoc['b_cytoIntensityMean_segment_std'] = df['b_cytoIntensityMean'].std()
+        mydoc['Elongation_segment_mean'] = df['Elongation'].mean()
+        mydoc['Elongation_segment_std'] = df['Elongation'].std()
 
-        try:
-            # client = mongodb_connect('mongodb://' + DB_HOST + ':27017')
-            # client.server_info()  # force connection, trigger error to be caught
-            # db = client.quip_comp
-            # mycol = db[name + '_features_td']  # name
-            # patch_feature_data = collection_saved.OrderedDict()
+    print('mydoc', json.dumps(mydoc, indent=4, sort_keys=True))
 
-            mydoc.Flatness_segment_mean = df['Flatness'].mean()
-            mydoc.Flatness_segment_std = df['Flatness'].std()
-            mydoc.Perimeter_segment_mean = df['Perimeter'].mean()
-            mydoc.Perimeter_segment_std = df['Perimeter'].std()
-            mydoc.Circularity_segment_mean = df['Circularity'].mean()
-            mydoc.Circularity_segment_std = df['Circularity'].std()
-            mydoc.r_GradientMean_segment_mean = df['r_GradientMean'].mean()
-            mydoc.r_GradientMean_segment_std = df['r_GradientMean'].std()
-            mydoc.b_GradientMean_segment_mean = df['b_GradientMean'].mean()
-            mydoc.b_GradientMean_segment_std = df['b_GradientMean'].std()
-            mydoc.r_cytoIntensityMean_segment_mean = df['r_cytoIntensityMean'].mean()
-            mydoc.r_cytoIntensityMean_segment_std = df['r_cytoIntensityMean'].std()
-            mydoc.b_cytoIntensityMean_segment_mean = df['b_cytoIntensityMean'].mean()
-            mydoc.b_cytoIntensityMean_segment_std = df['b_cytoIntensityMean'].std()
-            mydoc.Elongation_segment_mean = df['Elongation'].mean()
-            mydoc.Elongation_segment_std = df['Elongation'].std()
-
-            print('patch_feature_data', json.dumps(mydoc, indent=4, sort_keys=True))
-
-            # mydoc.datetime = datetime.now()
-            # mycol.insert_one(mydoc)
-
-        except Exception as e:
-            print('Error in update_db: ', e)
-            exit(1)
+    # try:
+    #     client = mongodb_connect('mongodb://' + DB_HOST + ':27017')
+    #     client.server_info()  # force connection, trigger error to be caught
+    #     db = client.quip_comp
+    #     mycol = db[name + '_features_td']  # name
+    #     # patch_feature_data = mycol.OrderedDict()
+    #     mydoc.datetime = datetime.now()
+    #     mycol.insert_one(mydoc)
+    # except Exception as e:
+    #     print('Error in update_db: ', e)
+    #     exit(1)
 
 
 def calculate(tile_data):
@@ -606,8 +603,8 @@ def patch_operations(patch, mydoc):
     # img to array
     img_array = np.array(img)
     # Intensity for all pixels, divided by num pixels
-    mydoc.grayscale_patch_mean = np.mean(img_array)
-    mydoc.grayscale_patch_std = np.std(img_array)
+    mydoc['grayscale_patch_mean'] = np.mean(img_array)
+    mydoc['grayscale_patch_std'] = np.std(img_array)
     # Intensity for all pixels inside segmented objects...
     # mydoc.grayscale_segment_mean = "n/a"
     # mydoc.grayscale_segment_std = "n/a"
@@ -620,8 +617,8 @@ def patch_operations(patch, mydoc):
     min1 = np.min(hed_title_img)
     Hematoxylin_img_matrix = hed_title_img[:, :, 0]
     Hematoxylin_img_matrix = ((Hematoxylin_img_matrix - min1) * 255 / (max1 - min1)).astype(np.uint8)
-    mydoc.Hematoxylin_patch_mean = np.mean(Hematoxylin_img_matrix)
-    mydoc.Hematoxylin_patch_std = np.std(Hematoxylin_img_matrix)
+    mydoc['Hematoxylin_patch_mean'] = np.mean(Hematoxylin_img_matrix)
+    mydoc['Hematoxylin_patch_std'] = np.std(Hematoxylin_img_matrix)
     # mydoc.Hematoxylin_segment_mean = "n/a"
     # mydoc.Hematoxylin_segment_std = "n/a"
 
