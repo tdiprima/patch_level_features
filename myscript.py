@@ -423,7 +423,7 @@ def update_db(slide, patch_data):
         # Ratio of nuclear material
         nucleus_area = df['AreaInPixels'].sum()
         # TODO: FIX
-        percent_nuclear_material = compute_rnm(patch_data['tile_width'], patch_data['tile_height'], nucleus_area)
+        percent_nuclear_material = compute_rnm(PATCH_SIZE, PATCH_SIZE, nucleus_area)
         print("Ratio of nuclear material: ", percent_nuclear_material)
 
         # Histology
@@ -446,8 +446,8 @@ def update_db(slide, patch_data):
             patch_feature_data['patch_index'] = patch_index
             patch_feature_data['patch_minx'] = patch_data['patch_minx']
             patch_feature_data['patch_miny'] = patch_data['patch_miny']
-            patch_feature_data['patch_width'] = patch_data['patch_width']
-            patch_feature_data['patch_height'] = patch_data['patch_height']
+            patch_feature_data['patch_width'] = PATCH_SIZE
+            patch_feature_data['patch_height'] = PATCH_SIZE
             patch_feature_data['Flatness_segment_mean'] = df['Flatness'].mean()
             patch_feature_data['Flatness_segment_std'] = df['Flatness'].std()
             patch_feature_data['Perimeter_segment_mean'] = df['Perimeter'].mean()
@@ -684,19 +684,16 @@ def do_tiles(data, slide):
                 # Accumulate information
                 if polygon_shape.within(bbox) or polygon_shape.intersects(bbox):
                     row_list.append(row)
-                    df2.append(row)
+                    df2 = df2.append(row)
                     if polygon_shape.intersects(bbox):
                         patch_area += polygon_shape.intersection(bbox).area
                     else:
                         patch_area += polygon_shape.area
 
-            if len(row_list) > 0:
-                update_db(slide, {'df': df2, 'patch_area': patch_area, 'patch_num': patch_num, 'patch_minx': minx,
-                                  'patch_miny': miny, 'tile_minx': data['tile_minx'], 'tile_miny': data['tile_miny']})
-            else:
-                update_db(slide, {'df': pandas.DataFrame(), 'patch_area': patch_area, 'patch_num': patch_num,
-                                  'patch_minx': minx, 'patch_miny': miny, 'tile_minx': data['tile_minx'],
-                                  'tile_miny': data['tile_miny']})
+            update_db(slide, {'df': df2, 'patch_area': patch_area, 'patch_num': patch_num,
+                              'patch_minx': minx, 'patch_miny': miny, 'tile_minx': data['tile_minx'],
+                              'tile_miny': data['tile_miny'], 'image_width': data['image_width'],
+                              'image_height': data['image_height']})
 
     elapsed_time = time.time() - start_time
     print('Runtime do_tiles: ')
