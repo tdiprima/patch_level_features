@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 import cv2
+import csv
 import numpy as np
 import openslide
 import pandas
@@ -484,12 +485,13 @@ def get_mongo_doc(slide, patch_data):
     return mydoc
 
 
-def update_db(slide, patch_data, db_name):
+# def update_db(slide, patch_data, db_name):
+def update(slide, patch_data, name):
     """
     Write data, per patch.
     :param slide:
     :param patch_data:
-    :param db_name:
+    :param name: Either file_name or db_name.
     :return:
     """
 
@@ -525,14 +527,27 @@ def update_db(slide, patch_data, db_name):
         # Insert record
         MYCOL.insert_one(mydoc)
     else:
-        print('mydoc', json.dumps(mydoc, indent=4, sort_keys=True))
+        # TODO:
+        if HAS_HEADER:
+            # we dumped the header already
+            fields = []
+            myCsvRow = []
+            with open(r'name', 'a') as f:
+                writer = csv.writer(f)
+                writer.writerow(fields)
+            with open('document.csv', 'a') as fd:
+                fd.write(myCsvRow)
+            print('mydoc', json.dumps(mydoc, indent=4, sort_keys=True))
+        else:
+            print()
 
 
-def calculate(tile_data):
+def calculate(tile_data, name):
     """
-    Mean and std of Perimeter, Flatness, Circularity,
-    r_GradientMean, b_GradientMean, b_cytoIntensityMean, r_cytoIntensityMean.
+    Mean and std of Perimeter, Flatness, Circularity, r_GradientMean, b_GradientMean, b_cytoIntensityMean,
+    r_cytoIntensityMean, etc.
     :param tile_data:
+    :param name:
     :return:
     """
     p = Path(os.path.join(SLIDE_DIR, (CASE_ID + '.svs')))
@@ -547,7 +562,7 @@ def calculate(tile_data):
     # Iterate through tile data
     for key, val in tile_data.items():
         # Create patches
-        do_tiles(val, slide)
+        do_tiles(val, slide, name)
         # exit(0)  # TESTING ONE.
 
     slide.close()
@@ -710,10 +725,12 @@ def detect_bright_spots(gray):
     # Do something.
 
 
-def do_tiles(data, slide):
+def do_tiles(data, slide, name):
     """
     Divide tile into patches
     :param data:
+    :param slide:
+    :param name:
     :return:
     """
     print('Dividing patch into tiles...')
@@ -765,10 +782,10 @@ def do_tiles(data, slide):
                     else:
                         patch_polygon_area += polygon_shape.area
 
-            update_db(slide, {'df': df2, 'patch_polygon_area': patch_polygon_area, 'patch_num': patch_num,
-                              'patch_minx': minx, 'patch_miny': miny, 'tile_minx': data['tile_minx'],
-                              'tile_miny': data['tile_miny'], 'image_width': data['image_width'],
-                              'image_height': data['image_height']}, 'test')
+            update(slide, {'df': df2, 'patch_polygon_area': patch_polygon_area, 'patch_num': patch_num,
+                           'patch_minx': minx, 'patch_miny': miny, 'tile_minx': data['tile_minx'],
+                           'tile_miny': data['tile_miny'], 'image_width': data['image_width'],
+                           'image_height': data['image_height']}, name)
 
     elapsed_time = time.time() - start_time
     print('Runtime do_tiles: ')
@@ -794,18 +811,19 @@ def write_to_database(db_name):
         exit(1)
 
     # Calculate
-    calculate(csv_data)
+    calculate(csv_data, db_name)
 
     client.close()
     print('Done.')
 
 
-def write_to_file():
+def write_to_file(file_name):
     """
-    Write to csv files
+    Write to csv file
+    :param file_name:
     :return:
     """
-    calculate(csv_data)
+    calculate(csv_data, file_name)
 
 
 # constant variables
@@ -862,6 +880,7 @@ csv_data = aggregate_data(jfile_objs, CSV_FILES)
 print('csv_data len: ', len(csv_data))
 
 # write_to_database(test)
+HAS_HEADER = False
 write_to_file()
 
 exit(0)
