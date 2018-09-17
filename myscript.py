@@ -438,8 +438,8 @@ def get_mongo_doc(slide, patch_data):
         "case_id": CASE_ID,
         "image_width": image_width,
         "image_height": image_height,
-        "mpp_x": mpp_x,
-        "mpp_y": mpp_y,
+        "mpp_x": round(mpp_x, 4),
+        "mpp_y": round(mpp_y, 4),
         "user": USER_NAME,
         "tumorFlag": "tumor",
         "patch_index": patch_index,
@@ -816,7 +816,7 @@ DATA_FILE_SUBFOLDERS = get_file_list(CASE_ID, 'config/data_file_path.list')
 # print('DATA_FILE_SUBFOLDERS', DATA_FILE_SUBFOLDERS)
 
 # Fetch data.
-# ssure_path_exists(SLIDE_DIR)
+# assure_path_exists(SLIDE_DIR)
 # copy_src_data(SLIDE_DIR)
 
 # Find what the pathologist circled as tumor.
