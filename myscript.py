@@ -787,8 +787,8 @@ def write_to_database(db_name):
     try:
         client = mongodb_connect('mongodb://' + DB_HOST + ':27017')
         client.server_info()  # force connection, trigger error to be caught
-        DB = client.quip_comp
-        MYCOL = DB[db_name + '_features_td']  # name
+        db = client.quip_comp
+        MYCOL = db[db_name + '_features_td']  # name
     except Exception as e:
         print('Connection error: ', e)
         exit(1)
@@ -832,7 +832,6 @@ CASE_ID = args["slide_name"]
 USER_NAME = args["user_name"]
 PATCH_SIZE = args["patch_size"]
 DB_HOST = args["db_host"]
-DB = {}
 MYCOL = {}
 
 SLIDE_DIR = os.path.join(WORK_DIR, CASE_ID) + os.sep
