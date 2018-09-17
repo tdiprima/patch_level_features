@@ -477,8 +477,8 @@ def get_mongo_doc(slide, patch_data):
         "elongation_segment_mean": "n/a",
         "elongation_segment_std": "n/a",
         "tile_minx": patch_data['tile_minx'],
-        "tile_miny": patch_data['tile_miny']
-        # , "datetime": datetime.now()
+        "tile_miny": patch_data['tile_miny'],
+        "datetime": datetime.now()
     }
 
     return mydoc
