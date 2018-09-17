@@ -769,8 +769,10 @@ def do_tiles(data, slide):
                     if polygon_shape.intersects(bbox):
                         try:
                             patch_polygon_area += polygon_shape.intersection(bbox).area
-                        except errors.TopologicalError as toperr:
-                            print('Invalid geometry', toperr)
+                        except Exception as err:
+                            # except errors.TopologicalError as toperr:
+                            # TODO: Heads up, we both have this issue. Should handle same way.
+                            print('Invalid geometry', err)
                     else:
                         patch_polygon_area += polygon_shape.area
 
@@ -814,8 +816,8 @@ DATA_FILE_SUBFOLDERS = get_file_list(CASE_ID, 'config/data_file_path.list')
 # print('DATA_FILE_SUBFOLDERS', DATA_FILE_SUBFOLDERS)
 
 # Fetch data.
-assure_path_exists(SLIDE_DIR)
-copy_src_data(SLIDE_DIR)
+# ssure_path_exists(SLIDE_DIR)
+# copy_src_data(SLIDE_DIR)
 
 # Find what the pathologist circled as tumor.
 tumor_mark_list = get_tumor_markup(USER_NAME)
