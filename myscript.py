@@ -755,7 +755,6 @@ def do_tiles(data, slide):
             print((minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy))
             # bbox = BoundingBox([(minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy)])
             bbox = Polygon([(minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy), (minx, miny)])
-            row_list = []
             df2 = pandas.DataFrame()
             patch_polygon_area = 0.0
             # Figure out which polygons (data rows) belong to which patch
@@ -766,10 +765,12 @@ def do_tiles(data, slide):
 
                 # Accumulate information
                 if polygon_shape.within(bbox) or polygon_shape.intersects(bbox):
-                    row_list.append(row)
                     df2 = df2.append(row)
                     if polygon_shape.intersects(bbox):
-                        patch_polygon_area += polygon_shape.intersection(bbox).area
+                        try:
+                            patch_polygon_area += polygon_shape.intersection(bbox).area
+                        except errors.TopologicalError as toperr:
+                            print('Invalid geometry', toperr)
                     else:
                         patch_polygon_area += polygon_shape.area
 
@@ -813,8 +814,8 @@ DATA_FILE_SUBFOLDERS = get_file_list(CASE_ID, 'config/data_file_path.list')
 # print('DATA_FILE_SUBFOLDERS', DATA_FILE_SUBFOLDERS)
 
 # Fetch data.
-# assure_path_exists(SLIDE_DIR)
-# copy_src_data(SLIDE_DIR)
+assure_path_exists(SLIDE_DIR)
+copy_src_data(SLIDE_DIR)
 
 # Find what the pathologist circled as tumor.
 tumor_mark_list = get_tumor_markup(USER_NAME)
