@@ -419,9 +419,12 @@ def get_mongo_doc(slide, patch_data):
         mpp_x = slide.properties[openslide.PROPERTY_NAME_MPP_X]
         mpp_y = slide.properties[openslide.PROPERTY_NAME_MPP_Y]
         slide_mpp = (float(mpp_x) + float(mpp_y)) / 2
-        print('mpp_x', mpp_x)
-        print('mpp_y', mpp_y)
-        print('slide_mpp', slide_mpp)
+        # print('mpp_x', mpp_x)
+        # print('mpp_y', mpp_y)
+        # print('slide_mpp', slide_mpp)
+        mpp_x = round(float(mpp_x), 4)
+        mpp_y = round(float(mpp_y), 4)
+
     except (KeyError, ValueError):
         print('Slide property error')
         exit(1)
@@ -430,7 +433,7 @@ def get_mongo_doc(slide, patch_data):
 
     # Ratio of nuclear material
     percent_nuclear_material = float((patch_data['patch_polygon_area'] / (PATCH_SIZE * PATCH_SIZE)) * 100)
-    print("Ratio of nuclear material: ", percent_nuclear_material)
+    # print("Ratio of nuclear material: ", percent_nuclear_material)
 
     patch_index = patch_data['patch_num']
 
@@ -438,8 +441,8 @@ def get_mongo_doc(slide, patch_data):
         "case_id": CASE_ID,
         "image_width": image_width,
         "image_height": image_height,
-        "mpp_x": round(float(mpp_x), 4),
-        "mpp_y": round(float(mpp_y), 4),
+        "mpp_x": mpp_x,
+        "mpp_y": mpp_y,
         "user": USER_NAME,
         "tumorFlag": "tumor",
         "patch_index": patch_index,
@@ -506,8 +509,6 @@ def update_db(slide, patch_data, db_name):
         client.server_info()  # force connection, trigger error to be caught
         db = client.quip_comp
         mycol = db[db_name + '_features_td']  # name
-        mycol.insert_one(mydoc)  # TESTING!
-        # patch_feature_data = mycol.OrderedDict()
     except Exception as e:
         print('Connection error: ', e)
         exit(1)
@@ -531,6 +532,7 @@ def update_db(slide, patch_data, db_name):
             mydoc['elongation_segment_mean'] = df['Elongation'].mean()
             mydoc['elongation_segment_std'] = df['Elongation'].std()
 
+        # Insert record in either case
         mycol.insert_one(mydoc)
 
     except Exception as e:
@@ -559,7 +561,7 @@ def calculate(tile_data):
     for key, val in tile_data.items():
         # Create patches
         do_tiles(val, slide)
-        exit(0)  # TESTING ONE.
+        # exit(0)  # TESTING ONE.
 
     slide.close()
 
