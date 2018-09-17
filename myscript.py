@@ -451,18 +451,18 @@ def get_mongo_doc(slide, patch_data):
         # "patch_area_selected_percentage": 0.0,
         "grayscale_patch_mean": 0.0,
         "grayscale_patch_std": 0.0,
-        "Hematoxylin_patch_mean": 0.0,
-        "Hematoxylin_patch_std": 0.0,
+        "hematoxylin_patch_mean": 0.0,
+        "hematoxylin_patch_std": 0.0,
         "grayscale_segment_mean": "n/a",
         "grayscale_segment_std": "n/a",
-        "Hematoxylin_segment_mean": "n/a",
-        "Hematoxylin_segment_std": "n/a",
-        "Flatness_segment_mean": "n/a",
-        "Flatness_segment_std": "n/a",
-        "Perimeter_segment_mean": "n/a",
-        "Perimeter_segment_std": "n/a",
-        "Circularity_segment_mean": "n/a",
-        "Circularity_segment_std": "n/a",
+        "hematoxylin_segment_mean": "n/a",
+        "hematoxylin_segment_std": "n/a",
+        "flatness_segment_mean": "n/a",
+        "flatness_segment_std": "n/a",
+        "perimeter_segment_mean": "n/a",
+        "perimeter_segment_std": "n/a",
+        "circularity_segment_mean": "n/a",
+        "circularity_segment_std": "n/a",
         "r_GradientMean_segment_mean": "n/a",
         "r_GradientMean_segment_std": "n/a",
         "b_GradientMean_segment_mean": "n/a",
@@ -471,8 +471,8 @@ def get_mongo_doc(slide, patch_data):
         "r_cytoIntensityMean_segment_std": "n/a",
         "b_cytoIntensityMean_segment_mean": "n/a",
         "b_cytoIntensityMean_segment_std": "n/a",
-        "Elongation_segment_mean": "n/a",
-        "Elongation_segment_std": "n/a",
+        "elongation_segment_mean": "n/a",
+        "elongation_segment_std": "n/a",
         "tile_minx": patch_data['tile_minx'],
         "tile_miny": patch_data['tile_miny']
         # , "datetime": datetime.now()
@@ -481,11 +481,12 @@ def get_mongo_doc(slide, patch_data):
     return mydoc
 
 
-def update_db(slide, patch_data):
+def update_db(slide, patch_data, db_name):
     """
     Write data, per patch.
     :param slide:
     :param patch_data:
+    :param db_name:
     :return:
     """
 
@@ -499,40 +500,43 @@ def update_db(slide, patch_data):
     # Histology
     mydoc = patch_operations(patch, mydoc)
 
-    if df.empty:
-        mycol = {}
-        # x = mycol.insert_one(mydoc)
-    else:
-        mydoc['Flatness_segment_mean'] = df['Flatness'].mean()
-        mydoc['Flatness_segment_std'] = df['Flatness'].std()
-        mydoc['Perimeter_segment_mean'] = df['Perimeter'].mean()
-        mydoc['Perimeter_segment_std'] = df['Perimeter'].std()
-        mydoc['Circularity_segment_mean'] = df['Circularity'].mean()
-        mydoc['Circularity_segment_std'] = df['Circularity'].std()
-        mydoc['r_GradientMean_segment_mean'] = df['r_GradientMean'].mean()
-        mydoc['r_GradientMean_segment_std'] = df['r_GradientMean'].std()
-        mydoc['b_GradientMean_segment_mean'] = df['b_GradientMean'].mean()
-        mydoc['b_GradientMean_segment_std'] = df['b_GradientMean'].std()
-        mydoc['r_cytoIntensityMean_segment_mean'] = df['r_cytoIntensityMean'].mean()
-        mydoc['r_cytoIntensityMean_segment_std'] = df['r_cytoIntensityMean'].std()
-        mydoc['b_cytoIntensityMean_segment_mean'] = df['b_cytoIntensityMean'].mean()
-        mydoc['b_cytoIntensityMean_segment_std'] = df['b_cytoIntensityMean'].std()
-        mydoc['Elongation_segment_mean'] = df['Elongation'].mean()
-        mydoc['Elongation_segment_std'] = df['Elongation'].std()
+    # Connect to MongoDB
+    try:
+        client = mongodb_connect('mongodb://' + DB_HOST + ':27017')
+        client.server_info()  # force connection, trigger error to be caught
+        db = client.quip_comp
+        mycol = db[db_name + '_features_td']  # name
+        mycol.insert_one(mydoc)  # TESTING!
+        # patch_feature_data = mycol.OrderedDict()
+    except Exception as e:
+        print('Connection error: ', e)
+        exit(1)
 
-    print('mydoc', json.dumps(mydoc, indent=4, sort_keys=True))
+    try:
+        if not df.empty:
+            mydoc['flatness_segment_mean'] = df['Flatness'].mean()
+            mydoc['flatness_segment_std'] = df['Flatness'].std()
+            mydoc['perimeter_segment_mean'] = df['Perimeter'].mean()
+            mydoc['perimeter_segment_std'] = df['Perimeter'].std()
+            mydoc['circularity_segment_mean'] = df['Circularity'].mean()
+            mydoc['circularity_segment_std'] = df['Circularity'].std()
+            mydoc['r_GradientMean_segment_mean'] = df['r_GradientMean'].mean()
+            mydoc['r_GradientMean_segment_std'] = df['r_GradientMean'].std()
+            mydoc['b_GradientMean_segment_mean'] = df['b_GradientMean'].mean()
+            mydoc['b_GradientMean_segment_std'] = df['b_GradientMean'].std()
+            mydoc['r_cytoIntensityMean_segment_mean'] = df['r_cytoIntensityMean'].mean()
+            mydoc['r_cytoIntensityMean_segment_std'] = df['r_cytoIntensityMean'].std()
+            mydoc['b_cytoIntensityMean_segment_mean'] = df['b_cytoIntensityMean'].mean()
+            mydoc['b_cytoIntensityMean_segment_std'] = df['b_cytoIntensityMean'].std()
+            mydoc['elongation_segment_mean'] = df['Elongation'].mean()
+            mydoc['elongation_segment_std'] = df['Elongation'].std()
 
-    # try:
-    #     client = mongodb_connect('mongodb://' + DB_HOST + ':27017')
-    #     client.server_info()  # force connection, trigger error to be caught
-    #     db = client.quip_comp
-    #     mycol = db[name + '_features_td']  # name
-    #     # patch_feature_data = mycol.OrderedDict()
-    #     mydoc.datetime = datetime.now()
-    #     mycol.insert_one(mydoc)
-    # except Exception as e:
-    #     print('Error in update_db: ', e)
-    #     exit(1)
+        mycol.insert_one(mydoc)
+
+    except Exception as e:
+        print('Error: ', e)
+        exit(1)
+    # print('mydoc', json.dumps(mydoc, indent=4, sort_keys=True))
 
 
 def calculate(tile_data):
@@ -615,10 +619,10 @@ def patch_operations(patch, mydoc):
     hed_title_img = separate_stains(img_array, hed_from_rgb)
     max1 = np.max(hed_title_img)
     min1 = np.min(hed_title_img)
-    Hematoxylin_img_matrix = hed_title_img[:, :, 0]
-    Hematoxylin_img_matrix = ((Hematoxylin_img_matrix - min1) * 255 / (max1 - min1)).astype(np.uint8)
-    mydoc['Hematoxylin_patch_mean'] = np.mean(Hematoxylin_img_matrix)
-    mydoc['Hematoxylin_patch_std'] = np.std(Hematoxylin_img_matrix)
+    new_img_array = hed_title_img[:, :, 0]
+    new_img_array = ((new_img_array - min1) * 255 / (max1 - min1)).astype(np.uint8)
+    mydoc['hematoxylin_patch_mean'] = np.mean(new_img_array)
+    mydoc['hematoxylin_patch_std'] = np.std(new_img_array)
     # mydoc.Hematoxylin_segment_mean = "n/a"
     # mydoc.Hematoxylin_segment_std = "n/a"
 
@@ -772,7 +776,7 @@ def do_tiles(data, slide):
             update_db(slide, {'df': df2, 'patch_polygon_area': patch_polygon_area, 'patch_num': patch_num,
                               'patch_minx': minx, 'patch_miny': miny, 'tile_minx': data['tile_minx'],
                               'tile_miny': data['tile_miny'], 'image_width': data['image_width'],
-                              'image_height': data['image_height']})
+                              'image_height': data['image_height']}, 'test')
 
     elapsed_time = time.time() - start_time
     print('Runtime do_tiles: ')
