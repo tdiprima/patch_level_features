@@ -9,7 +9,6 @@ from datetime import datetime
 from pathlib import Path
 
 import cv2
-import csv
 import numpy as np
 import openslide
 import pandas
@@ -485,13 +484,12 @@ def get_mongo_doc(slide, patch_data):
     return mydoc
 
 
-# def update_db(slide, patch_data, db_name):
-def update(slide, patch_data, name):
+def update_db(slide, patch_data, db_name):
     """
     Write data, per patch.
     :param slide:
     :param patch_data:
-    :param name: Either file_name or db_name.
+    :param db_name:
     :return:
     """
 
@@ -505,49 +503,50 @@ def update(slide, patch_data, name):
     # Histology
     mydoc = patch_operations(patch, mydoc)
 
-    if not df.empty:
-        mydoc['flatness_segment_mean'] = df['Flatness'].mean()
-        mydoc['flatness_segment_std'] = df['Flatness'].std()
-        mydoc['perimeter_segment_mean'] = df['Perimeter'].mean()
-        mydoc['perimeter_segment_std'] = df['Perimeter'].std()
-        mydoc['circularity_segment_mean'] = df['Circularity'].mean()
-        mydoc['circularity_segment_std'] = df['Circularity'].std()
-        mydoc['r_GradientMean_segment_mean'] = df['r_GradientMean'].mean()
-        mydoc['r_GradientMean_segment_std'] = df['r_GradientMean'].std()
-        mydoc['b_GradientMean_segment_mean'] = df['b_GradientMean'].mean()
-        mydoc['b_GradientMean_segment_std'] = df['b_GradientMean'].std()
-        mydoc['r_cytoIntensityMean_segment_mean'] = df['r_cytoIntensityMean'].mean()
-        mydoc['r_cytoIntensityMean_segment_std'] = df['r_cytoIntensityMean'].std()
-        mydoc['b_cytoIntensityMean_segment_mean'] = df['b_cytoIntensityMean'].mean()
-        mydoc['b_cytoIntensityMean_segment_std'] = df['b_cytoIntensityMean'].std()
-        mydoc['elongation_segment_mean'] = df['Elongation'].mean()
-        mydoc['elongation_segment_std'] = df['Elongation'].std()
+    mycol = DB[db_name + '_features_td']  # name
+    # Connect to MongoDB
+    # try:
+    #     client = mongodb_connect('mongodb://' + DB_HOST + ':27017')
+    #     client.server_info()  # force connection, trigger error to be caught
+    #     db = client.quip_comp
+    #     mycol = db[db_name + '_features_td']  # name
+    # except Exception as e:
+    #     print('Connection error: ', e)
+    #     exit(1)
 
-    if MYCOL:
-        # Insert record
-        MYCOL.insert_one(mydoc)
-    else:
-        # TODO:
-        if HAS_HEADER:
-            # we dumped the header already
-            fields = []
-            myCsvRow = []
-            with open(r'name', 'a') as f:
-                writer = csv.writer(f)
-                writer.writerow(fields)
-            with open('document.csv', 'a') as fd:
-                fd.write(myCsvRow)
-            print('mydoc', json.dumps(mydoc, indent=4, sort_keys=True))
-        else:
-            print()
+    try:
+        if not df.empty:
+            mydoc['flatness_segment_mean'] = df['Flatness'].mean()
+            mydoc['flatness_segment_std'] = df['Flatness'].std()
+            mydoc['perimeter_segment_mean'] = df['Perimeter'].mean()
+            mydoc['perimeter_segment_std'] = df['Perimeter'].std()
+            mydoc['circularity_segment_mean'] = df['Circularity'].mean()
+            mydoc['circularity_segment_std'] = df['Circularity'].std()
+            mydoc['r_GradientMean_segment_mean'] = df['r_GradientMean'].mean()
+            mydoc['r_GradientMean_segment_std'] = df['r_GradientMean'].std()
+            mydoc['b_GradientMean_segment_mean'] = df['b_GradientMean'].mean()
+            mydoc['b_GradientMean_segment_std'] = df['b_GradientMean'].std()
+            mydoc['r_cytoIntensityMean_segment_mean'] = df['r_cytoIntensityMean'].mean()
+            mydoc['r_cytoIntensityMean_segment_std'] = df['r_cytoIntensityMean'].std()
+            mydoc['b_cytoIntensityMean_segment_mean'] = df['b_cytoIntensityMean'].mean()
+            mydoc['b_cytoIntensityMean_segment_std'] = df['b_cytoIntensityMean'].std()
+            mydoc['elongation_segment_mean'] = df['Elongation'].mean()
+            mydoc['elongation_segment_std'] = df['Elongation'].std()
+
+        # Insert record in either case
+        mycol.insert_one(mydoc)
+
+    except Exception as e:
+        print('Error: ', e)
+        exit(1)
+    # print('mydoc', json.dumps(mydoc, indent=4, sort_keys=True))
 
 
-def calculate(tile_data, name):
+def calculate(tile_data):
     """
-    Mean and std of Perimeter, Flatness, Circularity, r_GradientMean, b_GradientMean, b_cytoIntensityMean,
-    r_cytoIntensityMean, etc.
+    Mean and std of Perimeter, Flatness, Circularity,
+    r_GradientMean, b_GradientMean, b_cytoIntensityMean, r_cytoIntensityMean.
     :param tile_data:
-    :param name:
     :return:
     """
     p = Path(os.path.join(SLIDE_DIR, (CASE_ID + '.svs')))
@@ -562,7 +561,7 @@ def calculate(tile_data, name):
     # Iterate through tile data
     for key, val in tile_data.items():
         # Create patches
-        do_tiles(val, slide, name)
+        do_tiles(val, slide)
         # exit(0)  # TESTING ONE.
 
     slide.close()
@@ -725,12 +724,10 @@ def detect_bright_spots(gray):
     # Do something.
 
 
-def do_tiles(data, slide, name):
+def do_tiles(data, slide):
     """
     Divide tile into patches
     :param data:
-    :param slide:
-    :param name:
     :return:
     """
     print('Dividing patch into tiles...')
@@ -782,48 +779,14 @@ def do_tiles(data, slide, name):
                     else:
                         patch_polygon_area += polygon_shape.area
 
-            update(slide, {'df': df2, 'patch_polygon_area': patch_polygon_area, 'patch_num': patch_num,
-                           'patch_minx': minx, 'patch_miny': miny, 'tile_minx': data['tile_minx'],
-                           'tile_miny': data['tile_miny'], 'image_width': data['image_width'],
-                           'image_height': data['image_height']}, name)
+            update_db(slide, {'df': df2, 'patch_polygon_area': patch_polygon_area, 'patch_num': patch_num,
+                              'patch_minx': minx, 'patch_miny': miny, 'tile_minx': data['tile_minx'],
+                              'tile_miny': data['tile_miny'], 'image_width': data['image_width'],
+                              'image_height': data['image_height']}, 'test')
 
     elapsed_time = time.time() - start_time
     print('Runtime do_tiles: ')
     print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
-
-
-def write_to_database(db_name):
-    """
-    Compute and write results to MongoDB
-    NOTE: Specs changed and we are not writing to database.
-    :param db_name:
-    :return:
-    """
-    # Connect to MongoDB
-    client = {}
-    try:
-        client = mongodb_connect('mongodb://' + DB_HOST + ':27017')
-        client.server_info()  # force connection, trigger error to be caught
-        db = client.quip_comp
-        MYCOL = db[db_name + '_features_td']  # name
-    except Exception as e:
-        print('Connection error: ', e)
-        exit(1)
-
-    # Calculate
-    calculate(csv_data, db_name)
-
-    client.close()
-    print('Done.')
-
-
-def write_to_file(file_name):
-    """
-    Write to csv file
-    :param file_name:
-    :return:
-    """
-    calculate(csv_data, file_name)
 
 
 # constant variables
@@ -850,7 +813,6 @@ CASE_ID = args["slide_name"]
 USER_NAME = args["user_name"]
 PATCH_SIZE = args["patch_size"]
 DB_HOST = args["db_host"]
-MYCOL = {}
 
 SLIDE_DIR = os.path.join(WORK_DIR, CASE_ID) + os.sep
 DATA_FILE_SUBFOLDERS = get_file_list(CASE_ID, 'config/data_file_path.list')
@@ -879,8 +841,21 @@ print('get_poly_within len: ', len(jfile_objs))
 csv_data = aggregate_data(jfile_objs, CSV_FILES)
 print('csv_data len: ', len(csv_data))
 
-# write_to_database(test)
-HAS_HEADER = False
-write_to_file()
+# Connect to MongoDB
+db_name = 'test'
+client = {}
+try:
+    client = mongodb_connect('mongodb://' + DB_HOST + ':27017')
+    client.server_info()  # force connection, trigger error to be caught
+    DB = client.quip_comp
+except Exception as e:
+    print('Connection error: ', e)
+    exit(1)
+
+# Calculate
+calculate(csv_data)
+
+client.close()
 
 exit(0)
+
