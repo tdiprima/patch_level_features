@@ -20,7 +20,7 @@ from skimage.color import separate_stains, hed_from_rgb
 
 
 def assure_path_exists(path):
-    """
+    """ 
     If path exists, great.
     If not, then create it.
     :param path:
