@@ -698,10 +698,19 @@ def do_tiles(data, slide):
             miny = miny + data['tile_miny']
             maxx = minx + PATCH_SIZE
             maxy = miny + PATCH_SIZE
+
+            # Normalize
+            nminx = minx / image_width
+            nminy = miny / image_width
+            nmaxx = maxx / image_width
+            nmaxy = maxy / image_width
+
             # Bounding box representing patch
             print((minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy))
             # bbox = BoundingBox([(minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy)])
             bbox = Polygon([(minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy), (minx, miny)])
+            bbox1 = Polygon([(nminx, nminy), (nmaxx, nminy), (nmaxx, nmaxy), (nminx, nmaxy), (nminx, nminy)])
+
             df2 = pandas.DataFrame()
             nucleus_area = 0.0
             # Figure out which polygons (data rows) belong to which patch
@@ -709,22 +718,29 @@ def do_tiles(data, slide):
                 xy = row['Polygon']
                 polygon_shape = string_to_polygon(xy, data['image_width'], data['image_height'], False)
                 polygon_shape = polygon_shape.buffer(0.0)  # Using a zero-width buffer cleans up many topology problems
+                # polygon_shape1 = string_to_polygon(xy, data['image_width'], data['image_height'], True)
+                # polygon_shape1 = polygon_shape1.buffer(0.0)
+
                 # print('polygon_shape', polygon_shape)
 
                 # Accumulate information
                 if polygon_shape.within(bbox) or polygon_shape.intersects(bbox):
-                    print('good')
                     df2 = df2.append(row)
                     if polygon_shape.intersects(bbox):
                         try:
                             nucleus_area += polygon_shape.intersection(bbox).area
+                            # nucleus_area += polygon_shape1.intersection(bbox1).area
+                            # print(nucleus_area * factor)
                         except Exception as err:
                             # except errors.TopologicalError as toperr:
                             print('Invalid geometry', err)
                     else:
                         nucleus_area += polygon_shape.area
-                else:
-                    print('not so much')
+                        # nucleus_area += polygon_shape1.area
+                        # print(nucleus_area * factor)
+
+            nucleus_area = nucleus_area / PATCH_SIZE
+            print('nucleus_area', nucleus_area)
 
             update_db(slide, {'df': df2, 'nucleus_area': nucleus_area, 'patch_num': patch_num,
                               'patch_minx': minx, 'patch_miny': miny, 'tile_minx': data['tile_minx'],
@@ -734,7 +750,7 @@ def do_tiles(data, slide):
     elapsed_time = time.time() - start_time
     print('Runtime do_tiles: ')
     print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
-    exit(0)
+    # exit(0)  # testing one tile
 
 
 def get_image_metadata():
