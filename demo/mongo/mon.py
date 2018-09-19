@@ -1,19 +1,10 @@
+import csv
+
 from pymongo import MongoClient
 
-client = MongoClient('mongodb://quip3.bmi.stonybrook.edu:27017/')
-db = client.quip_comp
-bridge = db.patch_level_features
-me = db.test_features_td
-
-arr = ['case_id', 'patch_size', 'patch_min_x_pixel', 'patch_min_y_pixel', 'patch_polygon_area',
-       'percent_nuclear_material', 'grayscale_patch_mean', 'grayscale_patch_std',
-       'hematoxylin_patch_mean', 'hematoxylin_patch_std', 'flatness_segment_mean', 'flatness_segment_std',
-       'perimeter_segment_mean', 'perimeter_segment_std',
-       'circularity_segment_mean', 'circularity_segment_std', 'r_GradientMean_segment_mean',
-       'r_GradientMean_segment_std', 'b_GradientMean_segment_mean',
-       'b_GradientMean_segment_std', 'r_cytoIntensityMean_segment_mean', 'r_cytoIntensityMean_segment_std',
-       'b_cytoIntensityMean_segment_mean', 'b_cytoIntensityMean_segment_std',
-       'elongation_segment_mean', 'elongation_segment_std']
+case_id = 'PC_058_0_1'
+patch_size = '512'
+db_host = ''
 
 
 def is_number(s):
@@ -28,34 +19,132 @@ def is_number(s):
     return True
 
 
-header = ''
-for thing in arr:
-    header += thing + '\t'
+def get_data():
+    client = MongoClient(db_host)
+    db = client.quip_comp
+    bridge = db.patch_level_features
+    me = db.test_features_td
 
-f = open("demofile.txt", "a")
-f.write(header)
+    my_data = []
+    fields = ['case_id', 'patch_size', 'patch_min_x_pixel', 'patch_min_y_pixel', 'patch_polygon_area',
+              'percent_nuclear_material', 'grayscale_patch_mean', 'grayscale_patch_std',
+              'hematoxylin_patch_mean', 'hematoxylin_patch_std', 'flatness_segment_mean', 'flatness_segment_std',
+              'perimeter_segment_mean', 'perimeter_segment_std',
+              'circularity_segment_mean', 'circularity_segment_std', 'r_GradientMean_segment_mean',
+              'r_GradientMean_segment_std', 'b_GradientMean_segment_mean',
+              'b_GradientMean_segment_std', 'r_cytoIntensityMean_segment_mean', 'r_cytoIntensityMean_segment_std',
+              'b_cytoIntensityMean_segment_mean', 'b_cytoIntensityMean_segment_std',
+              'elongation_segment_mean', 'elongation_segment_std']
+    my_data.append(fields)
 
-for doc in bridge.find({'case_id': 'PC_058_0_1'}):
-    x = doc['patch_min_x_pixel']
-    y = doc['patch_min_y_pixel']
-    items = me.find_one({'patch_min_x_pixel': x, 'patch_min_y_pixel': y})
-    if items is not None:
-        row = ''
-        for x in range(5, len(arr)):
-            name = arr[x]
-            try:
-                val1 = doc[name]
-            except KeyError:
-                val1 = doc[name.capitalize()]
-            val2 = items[name]
-            if is_number(val1) and is_number(val2):
-                myFloat = abs(val1 - val2)
-                # myFloat = round(float(myFloat), 7)
-                if x == len(arr):
-                    row += str(myFloat)
-                else:
-                    row += str(myFloat) + '\t'
+    for doc in bridge.find({'case_id': case_id}):
+        x = doc['patch_min_x_pixel']
+        y = doc['patch_min_y_pixel']
+        items = me.find_one({'patch_min_x_pixel': x, 'patch_min_y_pixel': y})
+        if items is not None:
+            row_vals = [case_id, patch_size, x, y]
+            start = len(row_vals)
+            stop = len(fields)
+            for x in range(start, stop):
+                name = fields[x]
+                try:
+                    val1 = doc[name]
+                except KeyError:
+                    # Capitalize field name
+                    val1 = doc[name.capitalize()]
+                val2 = items[name]
+                if is_number(val1) and is_number(val2):
+                    my_float = abs(val1 - val2)
+                    # my_float = round(float(my_float), 7)
+                    row_vals.append(my_float)
 
-        f.write(row)
+            my_data.append(row_vals)
 
-f.close()
+    client.close()
+
+    my_file = open('output.csv', 'w')
+    with my_file:
+        writer = csv.writer(my_file)
+        writer.writerows(my_data)
+
+    print("Writing complete")
+
+
+get_data()
+
+
+def get_data1():
+    client = MongoClient(db_host)
+    db = client.quip_comp
+    bridge = db.patch_level_features
+    me = db.test_features_td
+
+    fields = ['case_id', 'patch_size', 'patch_min_x_pixel', 'patch_min_y_pixel', 'patch_polygon_area',
+              'percent_nuclear_material', 'grayscale_patch_mean', 'grayscale_patch_std',
+              'hematoxylin_patch_mean', 'hematoxylin_patch_std', 'flatness_segment_mean', 'flatness_segment_std',
+              'perimeter_segment_mean', 'perimeter_segment_std',
+              'circularity_segment_mean', 'circularity_segment_std', 'r_GradientMean_segment_mean',
+              'r_GradientMean_segment_std', 'b_GradientMean_segment_mean',
+              'b_GradientMean_segment_std', 'r_cytoIntensityMean_segment_mean', 'r_cytoIntensityMean_segment_std',
+              'b_cytoIntensityMean_segment_mean', 'b_cytoIntensityMean_segment_std',
+              'elongation_segment_mean', 'elongation_segment_std']
+
+    header = ''
+    for thing in fields:
+        header += thing + '\t'
+
+    f = open("demofile.txt", "a")
+    f.write(header)
+
+    for doc in bridge.find({'case_id': case_id}):
+        x = doc['patch_min_x_pixel']
+        y = doc['patch_min_y_pixel']
+        items = me.find_one({'patch_min_x_pixel': x, 'patch_min_y_pixel': y})
+        if items is not None:
+            row = ''
+            for x in range(5, len(fields)):
+                name = fields[x]
+                try:
+                    val1 = doc[name]
+                except KeyError:
+                    val1 = doc[name.capitalize()]
+                val2 = items[name]
+                if is_number(val1) and is_number(val2):
+                    my_float = abs(val1 - val2)
+                    # my_float = round(float(my_float), 7)
+                    if x == len(fields):
+                        row += str(my_float)
+                    else:
+                        row += str(my_float) + '\t'
+
+            f.write(row)
+
+    f.close()
+
+
+def example2():
+    my_data = [["first_name", "second_name", "Grade"],
+               ['Alex', 'Brian', 'A'],
+               ['Tom', 'Smith', 'B']]
+
+    my_file = open('example2.csv', 'w')
+    with my_file:
+        writer = csv.writer(my_file)
+        writer.writerows(my_data)
+
+    print("Writing complete")
+
+
+def example4():
+    with open('example4.csv', 'w') as csvfile:
+        fieldnames = ['first_name', 'last_name', 'Grade']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()
+        writer.writerow({'Grade': 'B', 'first_name': 'Alex', 'last_name': 'Brian'})
+        writer.writerow({'Grade': 'A', 'first_name': 'Rachael',
+                         'last_name': 'Rodriguez'})
+        writer.writerow({'Grade': 'B', 'first_name': 'Jane', 'last_name': 'Oscar'})
+        writer.writerow({'Grade': 'B', 'first_name': 'Jane', 'last_name': 'Loive'})
+
+    print("Writing complete")
