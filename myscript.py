@@ -413,23 +413,7 @@ def get_mongo_doc(slide, patch_data):
     :param patch_data:
     :return:
     """
-    mpp_x = 0.0
-    mpp_y = 0.0
-    try:
-        mpp_x = slide.properties[openslide.PROPERTY_NAME_MPP_X]
-        mpp_y = slide.properties[openslide.PROPERTY_NAME_MPP_Y]
-        slide_mpp = (float(mpp_x) + float(mpp_y)) / 2
-        # print('mpp_x', mpp_x)
-        # print('mpp_y', mpp_y)
-        # print('slide_mpp', slide_mpp)
-        mpp_x = round(float(mpp_x), 4)
-        mpp_y = round(float(mpp_y), 4)
-
-    except (KeyError, ValueError):
-        print('Slide property error')
-        exit(1)
-
-    image_width, image_height = slide.dimensions
+    # TODO:!
 
     # Ratio of nuclear material
     percent_nuclear_material = float((patch_data['patch_polygon_area'] / (PATCH_SIZE * PATCH_SIZE)) * 100)
@@ -789,6 +773,25 @@ def do_tiles(data, slide):
     print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
 
+def get_image_metadata():
+    mpp_x = 0.0
+    mpp_y = 0.0
+    image_width = 0
+    image_height = 0
+    p = Path(os.path.join(SLIDE_DIR, (CASE_ID + '.svs')))
+    slide = openslide.OpenSlide(str(p))
+    mpp_x = slide.properties[openslide.PROPERTY_NAME_MPP_X]
+    mpp_y = slide.properties[openslide.PROPERTY_NAME_MPP_Y]
+    mpp_x = round(float(mpp_x), 4)
+    mpp_y = round(float(mpp_y), 4)
+    image_width, image_height = slide.dimensions
+    # image_width = slide.dimensions[0]
+    # image_height = slide.dimensions[1]
+    slide.close()
+
+    return mpp_x, mpp_y, image_width, image_height
+
+
 # constant variables
 WORK_DIR = "/data1/tdiprima/dataset"
 DATA_FILE_FOLDER = "nfs004:/data/shared/bwang/composite_dataset"
@@ -819,8 +822,13 @@ DATA_FILE_SUBFOLDERS = get_file_list(CASE_ID, 'config/data_file_path.list')
 # print('DATA_FILE_SUBFOLDERS', DATA_FILE_SUBFOLDERS)
 
 # Fetch data.
-assure_path_exists(SLIDE_DIR)
-copy_src_data(SLIDE_DIR)
+# assure_path_exists(SLIDE_DIR)
+# copy_src_data(SLIDE_DIR)
+
+mpp_x, mpp_y, image_width, image_height = get_image_metadata()
+factor = float(image_width) * float(image_height) * mpp_x * mpp_y
+print(PATCH_SIZE * factor)
+exit(0)
 
 # Find what the pathologist circled as tumor.
 tumor_mark_list = get_tumor_markup(USER_NAME)
@@ -842,7 +850,7 @@ csv_data = aggregate_data(jfile_objs, CSV_FILES)
 print('csv_data len: ', len(csv_data))
 
 # Connect to MongoDB
-db_name = 'test'
+db_name = 'test1'
 client = {}
 try:
     client = mongodb_connect('mongodb://' + DB_HOST + ':27017')
@@ -858,4 +866,3 @@ calculate(csv_data)
 client.close()
 
 exit(0)
-
