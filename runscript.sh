@@ -7,7 +7,7 @@ echo "Date: $(date)                      Host: $(hostname) "
 echo "-----------------------------------------------------"
 echo "BEGIN"
 
-python myscript.py -s PC_051_0_1 -u dr.rajarsi.gupta -b [database] -p 512
+python myscript.py -s [slide] -u [user] -b [db] -p 512
 
 echo "END"
 echo "Date: $(date)"
