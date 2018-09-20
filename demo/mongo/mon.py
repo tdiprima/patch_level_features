@@ -1,5 +1,5 @@
 # Compare the patch [and patient level] features from Bridge's implementation
-# with those from Tammy’s implementation [on a subset of image tiles]
+# with those from Tammy's implementation [on a subset of image tiles]
 import csv
 
 import numpy as np
