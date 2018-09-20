@@ -1,3 +1,4 @@
+# Generate max, mean, and std from computed feature value comparison
 from __future__ import print_function
 
 import csv
