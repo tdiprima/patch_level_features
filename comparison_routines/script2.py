@@ -4,8 +4,8 @@ import csv
 
 import pandas as pd
 
-input_file = 'output1.csv'
-output_file = 'validation1.csv'
+input_file = 'output.csv'
+output_file = 'validation.csv'
 
 df1 = pd.read_csv(input_file)
 my_data = {}

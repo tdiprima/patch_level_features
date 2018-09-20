@@ -1,16 +1,19 @@
 # Compare the patch [and patient level] features from Bridge's implementation
-# with those from Tammy's implementation [on a subset of image tiles]
+# with those from Tammy’s implementation [on a subset of image tiles]
 import csv
 
 import numpy as np
 from pymongo import MongoClient
 
 # RUN PGM FOR ONE CASE_ID
-case_id = 'PC_058_0_1'
+# TODO: Enter case_id and db_host!
+case_id = ''
 patch_size = '512'
-db_host = 'quip3.bmi.stonybrook.edu'
-input_collection = 'test1_features_td'
-output_file = 'output1.csv'
+db_host = ''
+input_collection = 'test_features_td'
+# input_collection = 'test1_features_td'
+output_file = 'output.csv'
+# output_file = 'output1.csv'
 
 
 def is_number(s):
