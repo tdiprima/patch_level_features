@@ -7,9 +7,9 @@ from pymongo import MongoClient
 
 # RUN PGM FOR ONE CASE_ID
 # TODO: Enter case_id and db_host!
-case_id = ''
+case_id = 'PC_058_0_1'
 patch_size = '512'
-db_host = ''
+db_host = 'quip3.bmi.stonybrook.edu'
 input_collection = 'test_features_td'
 # input_collection = 'test1_features_td'
 output_file = 'output.csv'
@@ -48,7 +48,7 @@ def get_data():
     for doc in bridge.find({'case_id': case_id}):
         x = doc['patch_min_x_pixel']
         y = doc['patch_min_y_pixel']
-        items = me.find_one({'patch_min_x_pixel': x, 'patch_min_y_pixel': y})
+        items = me.find_one({'case_id': case_id, 'patch_min_x_pixel': x, 'patch_min_y_pixel': y})
         if items is not None:
             row_vals = [case_id, patch_size, x, y]
             start = len(row_vals)

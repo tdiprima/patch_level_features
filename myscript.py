@@ -1,5 +1,4 @@
 import argparse
-import collections
 import json
 import os
 import subprocess
@@ -291,8 +290,8 @@ def get_poly_within(jfiles, tumor_list):
         f.close()
         temp.update(path_poly)
 
-    print('dupes', count)
-    print('len', len(temp))
+    # print('dupes', count)
+    # print('len', len(temp))
 
     for tumor_roi in tumor_list:
         for key, val in temp.items():
@@ -341,7 +340,7 @@ def aggregate_data(jfile_objs, CSV_FILES):
                     "tile_miny": v['tile_miny']}
         obj_map.update({k: data_obj})
 
-    print('obj_map', len(obj_map))
+    # print('obj_map', len(obj_map))
     print('Aggregating csv data...')
 
     for k, v in obj_map.items():
@@ -674,7 +673,7 @@ def do_tiles(data, slide):
     :param data:
     :return:
     """
-    print('Dividing patch into tiles...')
+    # print('Dividing patch into tiles...')
     start_time = time.time()
 
     patch_num = 0
@@ -689,7 +688,7 @@ def do_tiles(data, slide):
     for x in range(1, (int(cols) + 1)):
         for y in range(1, (int(rows) + 1)):
             patch_num += 1
-            print('patch_num', patch_num)
+            # print('patch_num', patch_num)
             # minx = minx + (x * tile_size)
             # miny = miny + (y * tile_size)
             minx = x * PATCH_SIZE
@@ -706,7 +705,7 @@ def do_tiles(data, slide):
             nmaxy = maxy / image_width
 
             # Bounding box representing patch
-            print((minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy))
+            # print((minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy))
             # bbox = BoundingBox([(minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy)])
             bbox = Polygon([(minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy), (minx, miny)])
             bbox1 = Polygon([(nminx, nminy), (nmaxx, nminy), (nmaxx, nmaxy), (nminx, nmaxy), (nminx, nminy)])
@@ -732,15 +731,16 @@ def do_tiles(data, slide):
                             # nucleus_area += polygon_shape1.intersection(bbox1).area
                             # print(nucleus_area * factor)
                         except Exception as err:
+                            temp = 1
                             # except errors.TopologicalError as toperr:
-                            print('Invalid geometry', err)
+                            # print('Invalid geometry', err)
                     else:
                         nucleus_area += polygon_shape.area
                         # nucleus_area += polygon_shape1.area
                         # print(nucleus_area * factor)
 
             nucleus_area = nucleus_area / PATCH_SIZE
-            print('nucleus_area', nucleus_area)
+            # print('nucleus_area', nucleus_area)
 
             update_db(slide, {'df': df2, 'nucleus_area': nucleus_area, 'patch_num': patch_num,
                               'patch_minx': minx, 'patch_miny': miny, 'tile_minx': data['tile_minx'],
@@ -748,8 +748,8 @@ def do_tiles(data, slide):
                               'image_height': data['image_height']}, coll_name)
 
     elapsed_time = time.time() - start_time
-    print('Runtime do_tiles: ')
-    print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
+    # print('Runtime do_tiles: ')
+    # print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
     # exit(0)  # testing one tile
 
 
@@ -803,10 +803,10 @@ DATA_FILE_SUBFOLDERS = get_file_list(CASE_ID, 'config/data_file_path.list')
 
 mpp_x, mpp_y, image_width, image_height = get_image_metadata()
 patch_polygon_area = PATCH_SIZE * PATCH_SIZE * mpp_x * mpp_y
-print('patch_polygon_area', patch_polygon_area)
+# print('patch_polygon_area', patch_polygon_area)
 
 factor = float(image_width) * float(image_height) * mpp_x * mpp_y
-print('factor', factor)
+# print('factor', factor)
 
 # Find what the pathologist circled as tumor.
 tumor_mark_list = get_tumor_markup(USER_NAME)
@@ -821,11 +821,11 @@ JSON_FILES, CSV_FILES = get_data_files()
 
 # Identify only the files within the tumor regions
 jfile_objs = get_poly_within(JSON_FILES, tumor_poly_list)
-print('get_poly_within len: ', len(jfile_objs))
+# print('get_poly_within len: ', len(jfile_objs))
 
 # Get data
 csv_data = aggregate_data(jfile_objs, CSV_FILES)
-print('csv_data len: ', len(csv_data))
+# print('csv_data len: ', len(csv_data))
 
 # Connect to MongoDB
 coll_name = 'test1'
