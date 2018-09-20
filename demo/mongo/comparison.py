@@ -1,30 +1,17 @@
 from __future__ import print_function
-import pandas as pd
+
 import csv
 
-df1 = pd.read_csv('output.csv')
+import pandas as pd
+
+input_file = 'output1.csv'
+output_file = 'validation1.csv'
+
+df1 = pd.read_csv(input_file)
 my_data = {}
 
-
-def get_iterator(dict1):
-    """
-    Because dict.iterkeys(), dict.iteritems() and dict.itervalues()
-    methods are not available in py3.
-    :param dict1:
-    :return:
-    """
-    try:
-        # Python 2
-        iter_obj = dict1.iteritems()
-    except AttributeError:
-        # Python 3
-        iter_obj = iter(dict1.items())
-
-    return iter_obj
-
-
 # df["weight"].mean()
-iter_obj = get_iterator(df1)
+iter_obj = iter(df1.items())
 count = 0
 for name, values in iter_obj:
     count += 1
@@ -43,25 +30,15 @@ for name, values in iter_obj:
             std = 0
             print(name, err)
 
-print(my_data)
-
-# f = open('mycsvfile.csv', 'wb')
-# keys, values = zip(*my_data.items())
-# print(f, end="", file=depend)
-# print >> f, ", ".join(keys)
-# print >> f, ", ".join(values)
-# f.close()
-
-# with open('mycsvfile.csv', 'wb') as f:  # Just use 'w' mode in 3.x
-#     w = csv.DictWriter(f, my_data.keys())
-#     w.writeheader()
-#     w.writerow(my_data)
-# f.close()
+# print(my_data)
 
 try:
     df2 = pd.DataFrame.from_records(my_data)
-    df2.to_csv('validation.csv')
+    df2.to_csv(output_file)
+    print("Writing complete")
 except ValueError as err:
+    print('An error occurred. Attempting to write to text file...')
     with open("my_output_file.txt", "w") as f:
         writer = csv.writer(f)
         writer.writerows(my_data)
+    print('Done')
