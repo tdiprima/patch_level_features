@@ -1,18 +1,15 @@
-# conda env create -f environment.yml
-name: myenv
+name: feature-env
+channels:
+  - conda-forge
 dependencies:
-  python=3.6.3
-  - cython
-  - math
-  - matplotlib
+  - python=3.6.3
   - numpy
-  - opencv
-  - openslide-python
+  - matplotlib
   - pandas
-  - planar
-  - pymongo
-  - scikit-image
-  - scipy
   - shapely
+  - pymongo
+  - openslide
+  - scikit-image
+  - opencv
   - pip:
-    - "--editable=git+https://github.com/jrosebr1/imutils@master"
+    - git+https://github.com/jrosebr1/imutils.git
