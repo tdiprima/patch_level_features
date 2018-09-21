@@ -43,3 +43,5 @@ except ValueError as err:
         writer = csv.writer(f)
         writer.writerows(my_data)
     print('Done')
+
+exit(0)
