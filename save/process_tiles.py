@@ -1,3 +1,5 @@
+# This script processes a slide image by dividing it into tiles of a specified size,
+# generates the coordinates for each tile, and then prints them.
 import math
 import os
 from pathlib import Path

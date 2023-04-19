@@ -1,3 +1,6 @@
+"""
+The script finds common rows between two CSV files and displays them using pandas.
+"""
 import pandas as pd
 
 df1 = pd.read_csv('a.csv')

@@ -1,4 +1,4 @@
-# Generate max, mean, and std from computed feature value comparison
+# Generates max, mean, and standard deviation from computed feature value comparison and writes the results to a CSV file.
 from __future__ import print_function
 
 import csv
@@ -47,4 +47,3 @@ except ValueError as err:
     print('Done')
 
 exit(0)
-

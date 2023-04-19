@@ -1,3 +1,5 @@
+# This script is designed to traverse a directory and its subdirectories, listing and sorting files with
+# .json and .csv extensions.
 import os
 
 
@@ -36,4 +38,3 @@ def get_data_files():
 SLIDE_DIR = ''
 # Fetch list of data files
 JSON_FILES, CSV_FILES = get_data_files()
-

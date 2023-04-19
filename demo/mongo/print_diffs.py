@@ -1,3 +1,8 @@
+"""
+This script compares numerical data from two MongoDB collections for specific fields,
+calculates their differences, and writes the results into a CSV file.
+"""
+
 import csv
 
 from pymongo import MongoClient

@@ -1,3 +1,9 @@
+"""
+The script processes image data for tumor and non-tumor analysis by dividing large images into patches, analyzing features
+within these patches (like nucleus area, grayscale intensity, etc.), and storing the results. It interacts with MongoDB
+for data retrieval and storage, uses concurrent processing for efficiency, and leverages libraries like shapely for
+geometric operations.
+"""
 import collections
 import csv
 import json
@@ -17,7 +23,7 @@ from skimage.color import separate_stains, hed_from_rgb
 
 if __name__ == '__main__':
     # if len(sys.argv) < 2:
-    #     print "usage:python run_jobs.py case_id user"
+    #     print("usage:python run_jobs.py case_id user")
     #     exit()
 
     csv.field_size_limit(sys.maxsize)
@@ -33,19 +39,19 @@ if __name__ == '__main__':
     tmp_array[0] = case_id
     tmp_array[1] = user
     image_list.append(tmp_array)
-    print image_list
+    print(image_list)
 
     remote_image_folder = "nfs001:/data/shared/tcga_analysis/seer_data/images"
-    # my_home = "/data1/bwang"
-    my_home = os.getcwd()
-    local_image_folder = os.path.join(my_home, 'img')
+    # work_dir = "/data1/bwang"
+    work_dir = os.getcwd()
+    local_image_folder = os.path.join(work_dir, 'img')
     if not os.path.exists(local_image_folder):
-        print '%s folder do not exist, then create it.' % local_image_folder
+        print("%s folder do not exist, then create it.") % local_image_folder
         os.makedirs(local_image_folder)
 
-    print " --- read config.json file ---"
+    print(" --- read config.json file ---")
     config_json_file_name = "config_cluster.json"
-    config_json_file = os.path.join(my_home, config_json_file_name)
+    config_json_file = os.path.join(work_dir, config_json_file_name)
     with open(config_json_file) as json_data:
         d = json.load(json_data)
         patch_size = d['patch_size']
@@ -53,7 +59,7 @@ if __name__ == '__main__':
         db_port = d['db_port']
         db_name1 = d['db_name1']
         db_name2 = d['db_name2']
-        print patch_size, db_host, db_port, db_name1, db_name2
+        print(patch_size, db_host, db_port, db_name1, db_name2)
     # exit()
 
     client = MongoClient('mongodb://' + db_host + ':' + db_port + '/')
@@ -80,20 +86,20 @@ if __name__ == '__main__':
     #######################################
     def findImagePath(case_id):
         '''
-        Finds image on server if can't find it in your folder.
+        Finds image on server if it can't find it in your folder.
         :param case_id:
         :return:
         '''
-        print "\nrun_jobs.py: findImagePath(...)"
+        print("\nrun_jobs.py: findImagePath(...)")
         image_path = ""
         input_file = "image_path.txt"
-        image_path_file = os.path.join(my_home, input_file)
+        image_path_file = os.path.join(work_dir, input_file)
         with open(image_path_file, 'r') as my_file:
             reader = csv.reader(my_file, delimiter=',')
             my_list = list(reader)
             for each_row in my_list:
                 file_path = each_row[0]  # path
-                if file_path.find(case_id) <> -1:  # find it!
+                if file_path.find(case_id) != -1:  # find it!
                     image_path = each_row[0]
                     image_path = image_path.replace('./', '')
                     break
@@ -108,7 +114,7 @@ if __name__ == '__main__':
         :param user:
         :return:
         '''
-        print "\nrun_jobs.py: findTumor_NonTumorRegions(...)"
+        print("\nrun_jobs.py: findTumor_NonTumorRegions(...)")
         execution_id = user + "_Tumor_Region"
         execution_id2 = user + "_Non_Tumor_Region"
 
@@ -140,19 +146,19 @@ if __name__ == '__main__':
                 tmp_polygon2 = [tuple(i2) for i2 in humarkup_polygon_tmp2]
                 tmp_polygon22 = Polygon(tmp_polygon2)
                 humarkup_polygon2 = tmp_polygon22.buffer(0)
-                if (index1 <> index2):
-                    if (humarkup_polygon1.within(humarkup_polygon2)):
+                if index1 != index2:
+                    if humarkup_polygon1.within(humarkup_polygon2):
                         is_within = True
                         break
-                    if (humarkup_polygon1.intersects(humarkup_polygon2)):
+                    if humarkup_polygon1.intersects(humarkup_polygon2):
                         humarkup_polygon1 = humarkup_polygon1.union(humarkup_polygon2)
                         is_intersect = True
                         index_intersected.append(index2)
-            if (not is_within and not is_intersect):
+            if not is_within and not is_intersect:
                 humanMarkupList_tumor.append(humarkup_polygon1)
-            if (is_within):
+            if is_within:
                 continue
-            if (is_intersect):
+            if is_intersect:
                 humanMarkupList_tumor.append(humarkup_polygon1)
 
         # handle only non tumor region overlap
@@ -183,30 +189,30 @@ if __name__ == '__main__':
                 tmp_polygon2 = [tuple(i2) for i2 in humarkup_polygon_tmp2]
                 tmp_polygon22 = Polygon(tmp_polygon2)
                 humarkup_polygon2 = tmp_polygon22.buffer(0)
-                if (index1 <> index2):
-                    if (humarkup_polygon1.within(humarkup_polygon2)):
+                if index1 != index2:
+                    if humarkup_polygon1.within(humarkup_polygon2):
                         is_within = True
                         break
-                    if (humarkup_polygon1.intersects(humarkup_polygon2)):
+                    if humarkup_polygon1.intersects(humarkup_polygon2):
                         humarkup_polygon1 = humarkup_polygon1.union(humarkup_polygon2)
                         is_intersect = True
                         index_intersected.append(index2)
-            if (not is_within and not is_intersect):
+            if not is_within and not is_intersect:
                 humanMarkupList_non_tumor.append(humarkup_polygon1)
-            if (is_within):
+            if is_within:
                 continue
-            if (is_intersect):
+            if is_intersect:
                 humanMarkupList_non_tumor.append(humarkup_polygon1)
 
         # handle tumor and non tumor region cross overlap
         for index1, tumor_region in enumerate(humanMarkupList_tumor):
             for index2, non_tumor_region in enumerate(humanMarkupList_non_tumor):
-                if (tumor_region.within(non_tumor_region)):
+                if tumor_region.within(non_tumor_region):
                     ext_polygon_intersect_points = list(zip(*non_tumor_region.exterior.coords.xy))
                     int_polygon_intersect_points = list(zip(*tumor_region.exterior.coords.xy))
                     newPoly = Polygon(ext_polygon_intersect_points, [int_polygon_intersect_points])
                     humanMarkupList_non_tumor[index2] = newPoly  # add a hole to this polygon
-                elif (non_tumor_region.within(tumor_region)):
+                elif non_tumor_region.within(tumor_region):
                     ext_polygon_intersect_points = list(zip(*tumor_region.exterior.coords.xy))
                     int_polygon_intersect_points = list(zip(*non_tumor_region.exterior.coords.xy))
                     newPoly = Polygon(ext_polygon_intersect_points, [int_polygon_intersect_points])
@@ -241,7 +247,7 @@ if __name__ == '__main__':
         :param case_id:
         :return:
         '''
-        print "\nrun_jobs.py: getCompositeDatasetExecutionID(...)"
+        print("\nrun_jobs.py: getCompositeDatasetExecutionID(...)")
         execution_id = ""
         # SEARCHING QUIP_COMP.
         for record in metadata2.find({"image.case_id": case_id,
@@ -261,7 +267,7 @@ if __name__ == '__main__':
         :param patch_min_y_pixel:
         :return:
         '''
-        print "\nrun_jobs.py: getMatrixValue(...)"
+        print("\nrun_jobs.py: getMatrixValue(...)")
         tmp_polygon = []
         for ii in range(0, len(poly_in)):
             x0 = poly_in[ii][0]
@@ -297,7 +303,7 @@ if __name__ == '__main__':
                            segment_10th_percentile_hematoxylin_intensity, segment_25th_percentile_hematoxylin_intensity,
                            segment_50th_percentile_hematoxylin_intensity, segment_75th_percentile_hematoxylin_intensity,
                            segment_90th_percentile_hematoxylin_intensity):
-        print "\nrun_jobs.py: saveFeatures2Mongo(...)"
+        print("\nrun_jobs.py: saveFeatures2Mongo(...)")
         patch_feature_data = collections.OrderedDict()
         patch_feature_data['case_id'] = case_id
         patch_feature_data['image_width'] = image_width
@@ -353,8 +359,8 @@ if __name__ == '__main__':
     def process_one_patch(case_id, user, i, j, patch_polygon_area, image_width, image_height, patch_polygon_original,
                           patchHumanMarkupRelation_tumor, patchHumanMarkupRelation_nontumor,
                           patch_humanmarkup_intersect_polygon_tumor, patch_humanmarkup_intersect_polygon_nontumor,
-                          nuclues_polygon_list):
-        print "\nrun_jobs.py: process_one_patch()"
+                          nucleus_polygon_list):
+        print("\nrun_jobs.py: process_one_patch()")
         patch_min_x_pixel = int(patch_polygon_original[0][0] * image_width)
         patch_min_y_pixel = int(patch_polygon_original[0][1] * image_height)
         x10 = patch_polygon_original[0][0]
@@ -367,7 +373,7 @@ if __name__ == '__main__':
         try:
             patch_img = img.read_region((patch_min_x_pixel, patch_min_y_pixel), 0, (patch_size, patch_size))
         except openslide.OpenSlideError as detail:
-            print 'Handling run-time error:', detail
+            print("Handling run-time error:"), detail
             exit()
         except Exception as e:
             print(e)
@@ -414,33 +420,33 @@ if __name__ == '__main__':
         patchHumanMarkupRelation = ""
         patch_humanmarkup_intersect_polygon = Polygon([(0, 0), (1, 1), (1, 0)])
 
-        if (patchHumanMarkupRelation_tumor == "intersect" and patchHumanMarkupRelation_nontumor == "intersect"):
+        if patchHumanMarkupRelation_tumor == "intersect" and patchHumanMarkupRelation_nontumor == "intersect":
             special_case1 = "both"
-        elif (patchHumanMarkupRelation_tumor == "intersect"):
+        elif patchHumanMarkupRelation_tumor == "intersect":
             special_case1 = "tumor"
             tumorFlag = "tumor"
             patchHumanMarkupRelation = "intersect"
             patch_humanmarkup_intersect_polygon = patch_humanmarkup_intersect_polygon_tumor
-        elif (patchHumanMarkupRelation_nontumor == "intersect"):
+        elif patchHumanMarkupRelation_nontumor == "intersect":
             special_case1 = "nontumor"
             tumorFlag = "non_tumor"
             patchHumanMarkupRelation = "intersect"
             patch_humanmarkup_intersect_polygon = patch_humanmarkup_intersect_polygon_nontumor
-        elif (patchHumanMarkupRelation_tumor == "within"):
+        elif patchHumanMarkupRelation_tumor == "within":
             special_case1 = "tumor"
             tumorFlag = "tumor"
             patchHumanMarkupRelation = "within"
             patch_humanmarkup_intersect_polygon = patch_humanmarkup_intersect_polygon_tumor
-        elif (patchHumanMarkupRelation_nontumor == "within"):
+        elif patchHumanMarkupRelation_nontumor == "within":
             special_case1 = "nontumor"
             tumorFlag = "non_tumor"
             patchHumanMarkupRelation = "within"
             patch_humanmarkup_intersect_polygon = patch_humanmarkup_intersect_polygon_nontumor
 
-        record_count = len(nuclues_polygon_list)
-        if (record_count > 0 and special_case1 <> "both"):
-            for nuclues_polygon in nuclues_polygon_list:
-                polygon = nuclues_polygon["geometry"]["coordinates"][0]
+        record_count = len(nucleus_polygon_list)
+        if record_count > 0 and special_case1 != "both":
+            for nucleus_polygon in nucleus_polygon_list:
+                polygon = nucleus_polygon["geometry"]["coordinates"][0]
                 tmp_poly2 = [tuple(i2) for i2 in polygon]
                 computer_polygon2 = Polygon(tmp_poly2)
                 computer_polygon = computer_polygon2.buffer(0)
@@ -449,24 +455,24 @@ if __name__ == '__main__':
                 special_case2 = ""
 
                 # only calculate features within/intersect tumor or non tumor region
-                if (patchHumanMarkupRelation == "within"):
+                if patchHumanMarkupRelation == "within":
                     special_case2 = "within"
-                elif (patchHumanMarkupRelation == "intersect"):
-                    if (computer_polygon.within(patch_humanmarkup_intersect_polygon)):
+                elif patchHumanMarkupRelation == "intersect":
+                    if computer_polygon.within(patch_humanmarkup_intersect_polygon):
                         special_case2 = "within"
-                    elif (computer_polygon.intersects(patch_humanmarkup_intersect_polygon)):
+                    elif computer_polygon.intersects(patch_humanmarkup_intersect_polygon):
                         special_case2 = "intersects"
                     else:
                         special_case2 = "disjoin"
 
-                    if (special_case2 == "disjoin"):
+                    if special_case2 == "disjoin":
                         continue  # skip this one and move to another computer polygon
 
                 if (special_case2 == "within" and computer_polygon.within(
                         patch_polygon)):  # within/within
                     nucleus_area = nucleus_area + polygon_area
                     has_value, one_polygon_mask = getMatrixValue(polygon, patch_min_x_pixel, patch_min_y_pixel)
-                    if (has_value):
+                    if has_value:
                         initial_grid = initial_grid | one_polygon_mask
                         findPixelWithinPolygon = True
                 elif (special_case2 == "within" and computer_polygon.intersects(
@@ -481,20 +487,20 @@ if __name__ == '__main__':
                             polygon_intersect_points = list(zip(*p.exterior.coords.xy))
                             has_value, one_polygon_mask = getMatrixValue(polygon_intersect_points, patch_min_x_pixel,
                                                                          patch_min_y_pixel)
-                            if (has_value):
+                            if has_value:
                                 initial_grid = initial_grid | one_polygon_mask
                                 findPixelWithinPolygon = True
                     elif polygon_intersect.geom_type == 'Polygon':
                         polygon_intersect_points = list(zip(*polygon_intersect.exterior.coords.xy))
                         has_value, one_polygon_mask = getMatrixValue(polygon_intersect_points, patch_min_x_pixel,
                                                                      patch_min_y_pixel)
-                        if (has_value):
+                        if has_value:
                             initial_grid = initial_grid | one_polygon_mask
                             findPixelWithinPolygon = True
                     else:
-                        print "patch indexes %d , %d Shape is not a polygon!!!" % (i, j)
-                        print polygon_intersect
-                elif (special_case2 == "intersects" and computer_polygon.within(patch_polygon)):  # intersects/within
+                        print("patch indexes %d , %d Shape is not a polygon!!!") % (i, j)
+                        print(polygon_intersect)
+                elif special_case2 == "intersects" and computer_polygon.within(patch_polygon):  # intersects/within
                     starttime = time.time()
                     polygon_intersect = computer_polygon.intersection(patch_humanmarkup_intersect_polygon)
                     if polygon_intersect.is_empty:
@@ -506,19 +512,19 @@ if __name__ == '__main__':
                             polygon_intersect_points = list(zip(*p.exterior.coords.xy))
                             has_value, one_polygon_mask = getMatrixValue(polygon_intersect_points, patch_min_x_pixel,
                                                                          patch_min_y_pixel)
-                            if (has_value):
+                            if has_value:
                                 initial_grid = initial_grid | one_polygon_mask
                                 findPixelWithinPolygon = True
                     elif polygon_intersect.geom_type == 'Polygon':
                         polygon_intersect_points = list(zip(*polygon_intersect.exterior.coords.xy))
                         has_value, one_polygon_mask = getMatrixValue(polygon_intersect_points, patch_min_x_pixel,
                                                                      patch_min_y_pixel)
-                        if (has_value):
+                        if has_value:
                             initial_grid = initial_grid | one_polygon_mask
                             findPixelWithinPolygon = True
                     else:
-                        print "patch indexes %d , %d Shape is not a polygon!!!" % (i, j)
-                        print polygon_intersect
+                        print("patch indexes %d , %d Shape is not a polygon!!!") % (i, j)
+                        print(polygon_intersect)
                 elif (special_case2 == "intersects" and computer_polygon.intersects(
                         patch_polygon)):  # intersects/intersects
                     starttime = time.time()
@@ -535,32 +541,32 @@ if __name__ == '__main__':
                             polygon_intersect_points = list(zip(*p.exterior.coords.xy))
                             has_value, one_polygon_mask = getMatrixValue(polygon_intersect_points, patch_min_x_pixel,
                                                                          patch_min_y_pixel)
-                            if (has_value):
+                            if has_value:
                                 initial_grid = initial_grid | one_polygon_mask
                                 findPixelWithinPolygon = True
                     elif polygon_intersect.geom_type == 'Polygon':
                         polygon_intersect_points = list(zip(*polygon_intersect.exterior.coords.xy))
                         has_value, one_polygon_mask = getMatrixValue(polygon_intersect_points, patch_min_x_pixel,
                                                                      patch_min_y_pixel)
-                        if (has_value):
+                        if has_value:
                             initial_grid = initial_grid | one_polygon_mask
                             findPixelWithinPolygon = True
                     else:
-                        print "patch indexes %d , %d Shape is not a polygon!!!" % (i, j)
-                        print polygon_intersect
+                        print("patch indexes %d , %d Shape is not a polygon!!!") % (i, j)
+                        print(polygon_intersect)
 
-        if (special_case1 <> "both"):
-            if (findPixelWithinPolygon):
+        if special_case1 != "both":
+            if findPixelWithinPolygon:
                 mask = initial_grid.reshape(patch_size, patch_size)
                 for index1, row in enumerate(mask):
                     for index2, pixel in enumerate(row):
-                        if (pixel):  # this pixel is inside of segmented nuclear polygon
+                        if pixel:  # this pixel is inside of segmented nuclear polygon
                             segment_img.append(grayscale_img_matrix[index1][index2])
                             segment_img_hematoxylin.append(Hematoxylin_img_matrix[index1][index2])
 
             percent_nuclear_material = float((nucleus_area / patch_polygon_area) * 100)
 
-            if (len(segment_img) > 0):
+            if len(segment_img) > 0:
                 segment_mean_grayscale_intensity = np.mean(segment_img)
                 segment_std_grayscale_intensity = np.std(segment_img)
                 segment_10th_percentile_grayscale_intensity = np.percentile(segment_img, 10)
@@ -591,7 +597,7 @@ if __name__ == '__main__':
                 segment_75th_percentile_hematoxylin_intensity = "n/a"
                 segment_90th_percentile_hematoxylin_intensity = "n/a"
 
-            print case_id, image_width, image_height, user, i, j, patch_min_x_pixel, patch_min_y_pixel, patch_size, patch_polygon_area, tumorFlag, nucleus_area, percent_nuclear_material, grayscale_patch_mean, grayscale_patch_std, Hematoxylin_patch_mean, Hematoxylin_patch_std, segment_mean_grayscale_intensity, segment_std_grayscale_intensity, segment_mean_hematoxylin_intensity, segment_std_hematoxylin_intensity
+            print(case_id, image_width, image_height, user, i, j, patch_min_x_pixel, patch_min_y_pixel, patch_size, patch_polygon_area, tumorFlag, nucleus_area, percent_nuclear_material, grayscale_patch_mean, grayscale_patch_std, Hematoxylin_patch_mean, Hematoxylin_patch_std, segment_mean_grayscale_intensity, segment_std_grayscale_intensity, segment_mean_hematoxylin_intensity, segment_std_hematoxylin_intensity)
             saveFeatures2Mongo(case_id, image_width, image_height, user, i, j, patch_min_x_pixel, patch_min_y_pixel,
                                patch_size, patch_polygon_area, tumorFlag, nucleus_area, percent_nuclear_material,
                                grayscale_patch_mean, grayscale_patch_std, Hematoxylin_patch_mean, Hematoxylin_patch_std,
@@ -615,9 +621,9 @@ if __name__ == '__main__':
         patchHumanMarkupRelation = patchHumanMarkupRelation_tumor
         patch_humanmarkup_intersect_polygon = patch_humanmarkup_intersect_polygon_tumor
         tumorFlag = "tumor"
-        if (record_count > 0 and special_case1 == "both"):
-            for nuclues_polygon in nuclues_polygon_list:
-                polygon = nuclues_polygon["geometry"]["coordinates"][0]
+        if record_count > 0 and special_case1 == "both":
+            for nucleus_polygon in nucleus_polygon_list:
+                polygon = nucleus_polygon["geometry"]["coordinates"][0]
                 tmp_poly2 = [tuple(i2) for i2 in polygon]
                 computer_polygon2 = Polygon(tmp_poly2)
                 computer_polygon = computer_polygon2.buffer(0)
@@ -626,24 +632,24 @@ if __name__ == '__main__':
                 special_case2 = ""
 
                 # only calculate features within/intersect tumor or non tumor region
-                if (patchHumanMarkupRelation == "within"):
+                if patchHumanMarkupRelation == "within":
                     special_case2 = "within"
-                elif (patchHumanMarkupRelation == "intersect"):
-                    if (computer_polygon.within(patch_humanmarkup_intersect_polygon)):
+                elif patchHumanMarkupRelation == "intersect":
+                    if computer_polygon.within(patch_humanmarkup_intersect_polygon):
                         special_case2 = "within"
-                    elif (computer_polygon.intersects(patch_humanmarkup_intersect_polygon)):
+                    elif computer_polygon.intersects(patch_humanmarkup_intersect_polygon):
                         special_case2 = "intersects"
                     else:
                         special_case2 = "disjoin"
 
-                    if (special_case2 == "disjoin"):
+                    if special_case2 == "disjoin":
                         continue  # skip this one and move to another computer polygon
 
                 if (special_case2 == "within" and computer_polygon.within(
                         patch_polygon)):  # within/within
                     nucleus_area = nucleus_area + polygon_area
                     has_value, one_polygon_mask = getMatrixValue(polygon, patch_min_x_pixel, patch_min_y_pixel)
-                    if (has_value):
+                    if has_value:
                         initial_grid = initial_grid | one_polygon_mask
                         findPixelWithinPolygon = True
                 elif (special_case2 == "within" and computer_polygon.intersects(
@@ -658,20 +664,20 @@ if __name__ == '__main__':
                             polygon_intersect_points = list(zip(*p.exterior.coords.xy))
                             has_value, one_polygon_mask = getMatrixValue(polygon_intersect_points, patch_min_x_pixel,
                                                                          patch_min_y_pixel)
-                            if (has_value):
+                            if has_value:
                                 initial_grid = initial_grid | one_polygon_mask
                                 findPixelWithinPolygon = True
                     elif polygon_intersect.geom_type == 'Polygon':
                         polygon_intersect_points = list(zip(*polygon_intersect.exterior.coords.xy))
                         has_value, one_polygon_mask = getMatrixValue(polygon_intersect_points, patch_min_x_pixel,
                                                                      patch_min_y_pixel)
-                        if (has_value):
+                        if has_value:
                             initial_grid = initial_grid | one_polygon_mask
                             findPixelWithinPolygon = True
                     else:
-                        print "patch indexes %d , %d Shape is not a polygon!!!" % (i, j)
-                        print polygon_intersect
-                elif (special_case2 == "intersects" and computer_polygon.within(patch_polygon)):  # intersects/within
+                        print("patch indexes %d , %d Shape is not a polygon!!!") % (i, j)
+                        print(polygon_intersect)
+                elif special_case2 == "intersects" and computer_polygon.within(patch_polygon):  # intersects/within
                     starttime = time.time()
                     polygon_intersect = computer_polygon.intersection(patch_humanmarkup_intersect_polygon)
                     if polygon_intersect.is_empty:
@@ -683,19 +689,19 @@ if __name__ == '__main__':
                             polygon_intersect_points = list(zip(*p.exterior.coords.xy))
                             has_value, one_polygon_mask = getMatrixValue(polygon_intersect_points, patch_min_x_pixel,
                                                                          patch_min_y_pixel)
-                            if (has_value):
+                            if has_value:
                                 initial_grid = initial_grid | one_polygon_mask
                                 findPixelWithinPolygon = True
                     elif polygon_intersect.geom_type == 'Polygon':
                         polygon_intersect_points = list(zip(*polygon_intersect.exterior.coords.xy))
                         has_value, one_polygon_mask = getMatrixValue(polygon_intersect_points, patch_min_x_pixel,
                                                                      patch_min_y_pixel)
-                        if (has_value):
+                        if has_value:
                             initial_grid = initial_grid | one_polygon_mask
                             findPixelWithinPolygon = True
                     else:
-                        print "patch indexes %d , %d Shape is not a polygon!!!" % (i, j)
-                        print polygon_intersect
+                        print("patch indexes %d , %d Shape is not a polygon!!!") % (i, j)
+                        print(polygon_intersect)
                 elif (special_case2 == "intersects" and computer_polygon.intersects(
                         patch_polygon)):  # intersects/intersects
                     starttime = time.time()
@@ -712,22 +718,22 @@ if __name__ == '__main__':
                             polygon_intersect_points = list(zip(*p.exterior.coords.xy))
                             has_value, one_polygon_mask = getMatrixValue(polygon_intersect_points, patch_min_x_pixel,
                                                                          patch_min_y_pixel)
-                            if (has_value):
+                            if has_value:
                                 initial_grid = initial_grid | one_polygon_mask
                                 findPixelWithinPolygon = True
                     elif polygon_intersect.geom_type == 'Polygon':
                         polygon_intersect_points = list(zip(*polygon_intersect.exterior.coords.xy))
                         has_value, one_polygon_mask = getMatrixValue(polygon_intersect_points, patch_min_x_pixel,
                                                                      patch_min_y_pixel)
-                        if (has_value):
+                        if has_value:
                             initial_grid = initial_grid | one_polygon_mask
                             findPixelWithinPolygon = True
                     else:
-                        print "patch indexes %d , %d Shape is not a polygon!!!" % (i, j)
-                        print polygon_intersect
+                        print("patch indexes %d , %d Shape is not a polygon!!!") % (i, j)
+                        print(polygon_intersect)
 
-        if (special_case1 == "both" and tumorFlag == "tumor"):
-            if (findPixelWithinPolygon):
+        if special_case1 == "both" and tumorFlag == "tumor":
+            if findPixelWithinPolygon:
                 mask = initial_grid.reshape(patch_size, patch_size)
                 for index1, row in enumerate(mask):
                     for index2, pixel in enumerate(row):
@@ -736,7 +742,7 @@ if __name__ == '__main__':
                             segment_img_hematoxylin.append(Hematoxylin_img_matrix[index1][index2])
 
             percent_nuclear_material = float((nucleus_area / patch_polygon_area) * 100)
-            if (len(segment_img) > 0):
+            if len(segment_img) > 0:
                 segment_mean_grayscale_intensity = np.mean(segment_img)
                 segment_std_grayscale_intensity = np.std(segment_img)
                 segment_10th_percentile_grayscale_intensity = np.percentile(segment_img, 10)
@@ -767,7 +773,7 @@ if __name__ == '__main__':
                 segment_75th_percentile_hematoxylin_intensity = "n/a"
                 segment_90th_percentile_hematoxylin_intensity = "n/a"
 
-            print case_id, image_width, image_height, user, i, j, patch_min_x_pixel, patch_min_y_pixel, patch_size, patch_polygon_area, tumorFlag, nucleus_area, percent_nuclear_material, grayscale_patch_mean, grayscale_patch_std, Hematoxylin_patch_mean, Hematoxylin_patch_std, segment_mean_grayscale_intensity, segment_std_grayscale_intensity, segment_mean_hematoxylin_intensity, segment_std_hematoxylin_intensity
+            print(case_id, image_width, image_height, user, i, j, patch_min_x_pixel, patch_min_y_pixel, patch_size, patch_polygon_area, tumorFlag, nucleus_area, percent_nuclear_material, grayscale_patch_mean, grayscale_patch_std, Hematoxylin_patch_mean, Hematoxylin_patch_std, segment_mean_grayscale_intensity, segment_std_grayscale_intensity, segment_mean_hematoxylin_intensity, segment_std_hematoxylin_intensity)
             saveFeatures2Mongo(case_id, image_width, image_height, user, i, j, patch_min_x_pixel, patch_min_y_pixel,
                                patch_size, patch_polygon_area, tumorFlag, nucleus_area, percent_nuclear_material,
                                grayscale_patch_mean, grayscale_patch_std, Hematoxylin_patch_mean, Hematoxylin_patch_std,
@@ -790,9 +796,9 @@ if __name__ == '__main__':
         patchHumanMarkupRelation = patchHumanMarkupRelation_nontumor
         patch_humanmarkup_intersect_polygon = patch_humanmarkup_intersect_polygon_nontumor
         tumorFlag = "non_tumor"
-        if (record_count > 0 and special_case1 == "both"):
-            for nuclues_polygon in nuclues_polygon_list:
-                polygon = nuclues_polygon["geometry"]["coordinates"][0]
+        if record_count > 0 and special_case1 == "both":
+            for nucleus_polygon in nucleus_polygon_list:
+                polygon = nucleus_polygon["geometry"]["coordinates"][0]
                 tmp_poly2 = [tuple(i2) for i2 in polygon]
                 computer_polygon2 = Polygon(tmp_poly2)
                 computer_polygon = computer_polygon2.buffer(0)
@@ -801,24 +807,24 @@ if __name__ == '__main__':
                 special_case2 = ""
 
                 # only calculate features within/intersect tumor or non tumor region
-                if (patchHumanMarkupRelation == "within"):
+                if patchHumanMarkupRelation == "within":
                     special_case2 = "within"
-                elif (patchHumanMarkupRelation == "intersect"):
-                    if (computer_polygon.within(patch_humanmarkup_intersect_polygon)):
+                elif patchHumanMarkupRelation == "intersect":
+                    if computer_polygon.within(patch_humanmarkup_intersect_polygon):
                         special_case2 = "within"
-                    elif (computer_polygon.intersects(patch_humanmarkup_intersect_polygon)):
+                    elif computer_polygon.intersects(patch_humanmarkup_intersect_polygon):
                         special_case2 = "intersects"
                     else:
                         special_case2 = "disjoin"
 
-                    if (special_case2 == "disjoin"):
+                    if special_case2 == "disjoin":
                         continue  # skip this one and move to another computer polygon
 
                 if (special_case2 == "within" and computer_polygon.within(
                         patch_polygon)):  # within/within
                     nucleus_area = nucleus_area + polygon_area
                     has_value, one_polygon_mask = getMatrixValue(polygon, patch_min_x_pixel, patch_min_y_pixel)
-                    if (has_value):
+                    if has_value:
                         initial_grid = initial_grid | one_polygon_mask
                         findPixelWithinPolygon = True
                 elif (special_case2 == "within" and computer_polygon.intersects(
@@ -833,20 +839,20 @@ if __name__ == '__main__':
                             polygon_intersect_points = list(zip(*p.exterior.coords.xy))
                             has_value, one_polygon_mask = getMatrixValue(polygon_intersect_points, patch_min_x_pixel,
                                                                          patch_min_y_pixel)
-                            if (has_value):
+                            if has_value:
                                 initial_grid = initial_grid | one_polygon_mask
                                 findPixelWithinPolygon = True
                     elif polygon_intersect.geom_type == 'Polygon':
                         polygon_intersect_points = list(zip(*polygon_intersect.exterior.coords.xy))
                         has_value, one_polygon_mask = getMatrixValue(polygon_intersect_points, patch_min_x_pixel,
                                                                      patch_min_y_pixel)
-                        if (has_value):
+                        if has_value:
                             initial_grid = initial_grid | one_polygon_mask
                             findPixelWithinPolygon = True
                     else:
-                        print "patch indexes %d , %d Shape is not a polygon!!!" % (i, j)
-                        print polygon_intersect
-                elif (special_case2 == "intersects" and computer_polygon.within(patch_polygon)):  # intersects/within
+                        print("patch indexes %d , %d Shape is not a polygon!!!") % (i, j)
+                        print(polygon_intersect)
+                elif special_case2 == "intersects" and computer_polygon.within(patch_polygon):  # intersects/within
                     starttime = time.time()
                     polygon_intersect = computer_polygon.intersection(patch_humanmarkup_intersect_polygon)
                     if polygon_intersect.is_empty:
@@ -858,19 +864,19 @@ if __name__ == '__main__':
                             polygon_intersect_points = list(zip(*p.exterior.coords.xy))
                             has_value, one_polygon_mask = getMatrixValue(polygon_intersect_points, patch_min_x_pixel,
                                                                          patch_min_y_pixel)
-                            if (has_value):
+                            if has_value:
                                 initial_grid = initial_grid | one_polygon_mask
                                 findPixelWithinPolygon = True
                     elif polygon_intersect.geom_type == 'Polygon':
                         polygon_intersect_points = list(zip(*polygon_intersect.exterior.coords.xy))
                         has_value, one_polygon_mask = getMatrixValue(polygon_intersect_points, patch_min_x_pixel,
                                                                      patch_min_y_pixel)
-                        if (has_value):
+                        if has_value:
                             initial_grid = initial_grid | one_polygon_mask
                             findPixelWithinPolygon = True
                     else:
-                        print "patch indexes %d , %d Shape is not a polygon!!!" % (i, j)
-                        print polygon_intersect
+                        print("patch indexes %d , %d Shape is not a polygon!!!") % (i, j)
+                        print(polygon_intersect)
                 elif (special_case2 == "intersects" and computer_polygon.intersects(
                         patch_polygon)):  # intersects/intersects
                     starttime = time.time()
@@ -887,21 +893,21 @@ if __name__ == '__main__':
                             polygon_intersect_points = list(zip(*p.exterior.coords.xy))
                             has_value, one_polygon_mask = getMatrixValue(polygon_intersect_points, patch_min_x_pixel,
                                                                          patch_min_y_pixel)
-                            if (has_value):
+                            if has_value:
                                 initial_grid = initial_grid | one_polygon_mask
                                 findPixelWithinPolygon = True
                     elif polygon_intersect.geom_type == 'Polygon':
                         polygon_intersect_points = list(zip(*polygon_intersect.exterior.coords.xy))
                         has_value, one_polygon_mask = getMatrixValue(polygon_intersect_points, patch_min_x_pixel,
                                                                      patch_min_y_pixel)
-                        if (has_value):
+                        if has_value:
                             initial_grid = initial_grid | one_polygon_mask
                             findPixelWithinPolygon = True
                     else:
-                        print "patch indexes %d , %d Shape is not a polygon!!!" % (i, j)
-                        print polygon_intersect
+                        print("patch indexes %d , %d Shape is not a polygon!!!") % (i, j)
+                        print(polygon_intersect)
 
-        if (special_case1 == "both" and tumorFlag == "non_tumor"):
+        if special_case1 == "both" and tumorFlag == "non_tumor":
             if (findPixelWithinPolygon):
                 mask = initial_grid.reshape(patch_size, patch_size)
                 for index1, row in enumerate(mask):
@@ -911,7 +917,7 @@ if __name__ == '__main__':
                             segment_img_hematoxylin.append(Hematoxylin_img_matrix[index1][index2])
 
             percent_nuclear_material = float((nucleus_area / patch_polygon_area) * 100)
-            if (len(segment_img) > 0):
+            if len(segment_img) > 0:
                 segment_mean_grayscale_intensity = np.mean(segment_img)
                 segment_std_grayscale_intensity = np.std(segment_img)
                 segment_10th_percentile_grayscale_intensity = np.percentile(segment_img, 10)
@@ -942,7 +948,7 @@ if __name__ == '__main__':
                 segment_75th_percentile_hematoxylin_intensity = "n/a"
                 segment_90th_percentile_hematoxylin_intensity = "n/a"
 
-            print case_id, image_width, image_height, user, i, j, patch_min_x_pixel, patch_min_y_pixel, patch_size, patch_polygon_area, tumorFlag, nucleus_area, percent_nuclear_material, grayscale_patch_mean, grayscale_patch_std, Hematoxylin_patch_mean, Hematoxylin_patch_std, segment_mean_grayscale_intensity, segment_std_grayscale_intensity, segment_mean_hematoxylin_intensity, segment_std_hematoxylin_intensity
+            print(case_id, image_width, image_height, user, i, j, patch_min_x_pixel, patch_min_y_pixel, patch_size, patch_polygon_area, tumorFlag, nucleus_area, percent_nuclear_material, grayscale_patch_mean, grayscale_patch_std, Hematoxylin_patch_mean, Hematoxylin_patch_std, segment_mean_grayscale_intensity, segment_std_grayscale_intensity, segment_mean_hematoxylin_intensity, segment_std_hematoxylin_intensity)
             saveFeatures2Mongo(case_id, image_width, image_height, user, i, j, patch_min_x_pixel, patch_min_y_pixel,
                                patch_size, patch_polygon_area, tumorFlag, nucleus_area, percent_nuclear_material,
                                grayscale_patch_mean, grayscale_patch_std, Hematoxylin_patch_mean, Hematoxylin_patch_std,
@@ -964,25 +970,25 @@ if __name__ == '__main__':
             #####################################################################
 
 
-    print '--- process image_list  ---- '
+    print("--- process image_list  ---- ")
     for item in image_list:
         case_id = item[0]
         user = item[1]
         # exit()
         execution_id = user + "_Tumor_Region"
         execution_id2 = user + "_Non_Tumor_Region"
-        print case_id, user, execution_id, execution_id2
+        print(case_id, user, execution_id, execution_id2)
         # download image svs file to local folder
         image_file_name = case_id + ".svs"
         image_file = os.path.join(local_image_folder, image_file_name)
         if not os.path.isfile(image_file):
-            print "image svs file is not available, then download it to local folder."
+            print("image svs file is not available, then download it to local folder.")
             img_path = findImagePath(case_id)
             full_image_file = os.path.join(remote_image_folder, img_path)
             subprocess.call(['scp', full_image_file, local_image_folder])
 
         image_file = os.path.join(local_image_folder, image_file_name)
-        print image_file
+        print(image_file)
 
         try:
             img = openslide.OpenSlide(image_file)
@@ -997,8 +1003,8 @@ if __name__ == '__main__':
         patch_x_num = int(patch_x_num)
         patch_y_num = int(patch_y_num)
         humanMarkupList_tumor, humanMarkupList_non_tumor = findTumor_NonTumorRegions(case_id, user)
-        if (len(humanMarkupList_tumor) == 0 and humanMarkupList_non_tumor == 0):
-            print "No tumor or non tumor regions has been marked in this image by user %s." % user
+        if len(humanMarkupList_tumor) == 0 and humanMarkupList_non_tumor == 0:
+            print("No tumor or non tumor regions has been marked in this image by user %s.") % user
             exit()
         comp_execution_id = getCompositeDatasetExecutionID(case_id)
 
@@ -1028,56 +1034,56 @@ if __name__ == '__main__':
                     patch_polygon_area = patch_polygon.area
 
                     for humanMarkup in humanMarkupList_tumor:
-                        if (patch_polygon.within(humanMarkup)):
-                            # print "-- within --" 
+                        if patch_polygon.within(humanMarkup):
+                            # print("-- within --") 
                             patchHumanMarkupRelation_tumor = "within"
                             tumor_related_patch = True
                             break
-                        elif (patch_polygon.intersects(humanMarkup)):
-                            # print "-- intersects --"
+                        elif patch_polygon.intersects(humanMarkup):
+                            # print("-- intersects --")
                             patchHumanMarkupRelation_tumor = "intersect"
                             patch_humanmarkup_intersect_polygon_tumor = humanMarkup
                             tumor_related_patch = True
                             break
                         else:
-                            # print "-- disjoin --"
+                            # print("-- disjoin --")
                             patchHumanMarkupRelation_tumor = "disjoin"
 
                     for humanMarkup in humanMarkupList_non_tumor:
-                        if (patch_polygon.within(humanMarkup)):
-                            # print "-- within --" 
+                        if patch_polygon.within(humanMarkup):
+                            # print("-- within --") 
                             patchHumanMarkupRelation_nontumor = "within"
                             non_tumor_related_patch = True
                             break
-                        elif (patch_polygon.intersects(humanMarkup)):
-                            # print "-- intersects --"
+                        elif patch_polygon.intersects(humanMarkup):
+                            # print("-- intersects --")
                             patchHumanMarkupRelation_nontumor = "intersect"
                             patch_humanmarkup_intersect_polygon_nontumor = humanMarkup
                             non_tumor_related_patch = True
                             break
                         else:
-                            # print "-- disjoin --"
+                            # print("-- disjoin --")
                             patchHumanMarkupRelation_nontumor = "disjoin"
 
                     # only calculate features within/intersect tumor/non tumor region
-                    if (patchHumanMarkupRelation_tumor == "disjoin" and patchHumanMarkupRelation_nontumor == "disjoin"):
+                    if patchHumanMarkupRelation_tumor == "disjoin" and patchHumanMarkupRelation_nontumor == "disjoin":
                         continue
 
-                    nuclues_polygon_list = []
+                    nucleus_polygon_list = []
                     x1_new = float(x10 - (patch_width_unit * tolerance))
                     y1_new = float(y10 - (patch_height_unit * tolerance))
                     x2_new = float(x20 + (patch_width_unit * tolerance))
                     y2_new = float(y20 + (patch_height_unit * tolerance))
                     # SEARCHING QUIP_COMP.
-                    for nuclues_polygon in objects2.find({"provenance.image.case_id": case_id,
+                    for nucleus_polygon in objects2.find({"provenance.image.case_id": case_id,
                                                           "provenance.analysis.execution_id": comp_execution_id,
                                                           "x": {'$gte': x1_new, '$lte': x2_new},
                                                           "y": {'$gte': y1_new, '$lte': y2_new}},
                                                          {"geometry": 1, "_id": 0}):
-                        nuclues_polygon_list.append(nuclues_polygon)
+                        nucleus_polygon_list.append(nucleus_polygon)
                     executor.submit(process_one_patch, case_id, user, i, j, patch_polygon_area, image_width,
                                     image_height, patch_polygon1, patchHumanMarkupRelation_tumor,
                                     patchHumanMarkupRelation_nontumor, patch_humanmarkup_intersect_polygon_tumor,
-                                    patch_humanmarkup_intersect_polygon_nontumor, nuclues_polygon_list)
+                                    patch_humanmarkup_intersect_polygon_nontumor, nucleus_polygon_list)
         img.close()
     exit()

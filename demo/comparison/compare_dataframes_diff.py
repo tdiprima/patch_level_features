@@ -1,4 +1,8 @@
-# https://stackoverflow.com/questions/17095101/outputting-difference-in-two-pandas-dataframes-side-by-side-highlighting-the-d
+"""
+This script identifies and outputs the differences between two pandas DataFrames in a structured way.
+https://stackoverflow.com/questions/17095101/outputting-difference-in-two-pandas-dataframes-side-by-side-highlighting-the-d
+"""
+
 import pandas as pd
 import numpy as np
 import sys

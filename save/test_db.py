@@ -1,3 +1,6 @@
+# Connects to a MongoDB instance, inserts a test data document into a specified collection, and
+# exits the program if an error occurs.
+
 def test_db():
     try:
         name = 'test'
@@ -12,4 +15,3 @@ def test_db():
     except Exception as e:
         print('test_db: ', e)
         exit(1)
-

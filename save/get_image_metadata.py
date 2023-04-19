@@ -1,3 +1,4 @@
+# This script retrieves the width and height of a whole-slide image by reading the image file and returning its dimensions.
 import os
 from pathlib import Path
 
@@ -24,5 +25,5 @@ SLIDE_DIR = ''
 CASE_ID = ''
 
 # Get image width and height.
-# IMAGE_WIDTH, IMAGE_HEIGHT = get_image_metadata()
-# print(IMAGE_WIDTH, IMAGE_HEIGHT)
+IMAGE_WIDTH, IMAGE_HEIGHT = get_image_metadata()
+print(IMAGE_WIDTH, IMAGE_HEIGHT)

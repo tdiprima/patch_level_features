@@ -1,3 +1,7 @@
+"""
+The script filters rows from one DataFrame (df1) based on matches in another DataFrame (df2) and saves the results.
+"""
+
 import pandas as pd
 
 # First, the spreadsheets must agree.

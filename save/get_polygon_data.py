@@ -1,3 +1,6 @@
+# This script reads polygon data from CSV files in a specified directory, converts polygon strings to actual polygons,
+# and then checks for the spatial relationship between a set of tumor regions and the polygons, reporting the number of
+# polygons that are within, intersect, or are disjoint with each tumor region.
 import os
 
 import pandas

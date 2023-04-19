@@ -1,5 +1,21 @@
+"""
+This code is a Python script that appears to be part of an imaging analysis workflow for detecting cancerous regions in
+medical images. It reads in slide images, identifies tumors, and extracts features from the image data. The features are
+then used to train a model to detect cancerous regions.
+
+The code performs the following steps:
+- Reads in slide images
+- Identifies tumor regions using a pathologist's markup
+- Converts the whole slide into tiles
+- Extracts features from each tile, including color intensity, stain intensity, and shape features
+- Calculates statistics for each feature, such as mean and standard deviation
+- Inserts the feature data into a MongoDB database
+
+The code also includes functions to convert RGB images to histology images, detect bright spots (e.g. nuclei) in the
+images, and divide the images into patches. The code uses libraries such as OpenSlide, scikit-image, and opencv for
+image processing, as well as pandas for data manipulation and MongoDB for data storage.
+"""
 import argparse
-import collections
 import json
 import os
 import subprocess
@@ -100,14 +116,8 @@ def get_tumor_markup(user_name):
         client.server_info()  # force connection, trigger error to be caught
         db = client.quip
         coll = db.objects
-        filter_q = {
-            'provenance.image.case_id': CASE_ID,
-            'provenance.analysis.execution_id': execution_id
-        }
-        projection_q = {
-            'geometry.coordinates': 1,
-            '_id': 0
-        }
+        filter_q = {'provenance.image.case_id': CASE_ID, 'provenance.analysis.execution_id': execution_id}
+        projection_q = {'geometry.coordinates': 1, '_id': 0}
         print('quip.objects')
         print(filter_q, ',', projection_q)
         cursor = coll.find(filter_q, projection_q)
@@ -359,9 +369,8 @@ def aggregate_data(jfile_objs, CSV_FILES):
             else:
                 # new = old[['A', 'C', 'D']].copy()
                 df1 = df[
-                    ['Perimeter', 'Flatness', 'Circularity', 'r_GradientMean', 'b_GradientMean',
-                     'b_cytoIntensityMean', 'r_cytoIntensityMean', 'r_IntensityMean', 'r_cytoGradientMean',
-                     'Elongation', 'Polygon']].copy()
+                    ['Perimeter', 'Flatness', 'Circularity', 'r_GradientMean', 'b_GradientMean', 'b_cytoIntensityMean',
+                     'r_cytoIntensityMean', 'r_IntensityMean', 'r_cytoGradientMean', 'Elongation', 'Polygon']].copy()
                 frames.append(df1)
 
         if frames:
@@ -396,50 +405,21 @@ def get_mongo_doc(slide, patch_data):
 
     patch_index = patch_data['patch_num']
 
-    mydoc = {
-        "case_id": CASE_ID,
-        "image_width": image_width,
-        "image_height": image_height,
-        "mpp_x": mpp_x,
-        "mpp_y": mpp_y,
-        "user": USER_NAME,
-        "tumorFlag": "tumor",
-        "patch_index": patch_index,
-        "patch_min_x_pixel": patch_data['patch_minx'],
-        "patch_min_y_pixel": patch_data['patch_miny'],
-        "patch_size": PATCH_SIZE,
-        "patch_polygon_area": patch_polygon_area,
-        "nucleus_area": patch_data['nucleus_area'],
-        "percent_nuclear_material": percent_nuclear_material,
-        # "patch_area_selected_percentage": 100.0,
-        "grayscale_patch_mean": 0.0,
-        "grayscale_patch_std": 0.0,
-        "hematoxylin_patch_mean": 0.0,
-        "hematoxylin_patch_std": 0.0,
-        "grayscale_segment_mean": "n/a",
-        "grayscale_segment_std": "n/a",
-        "hematoxylin_segment_mean": "n/a",
-        "hematoxylin_segment_std": "n/a",
-        "flatness_segment_mean": "n/a",
-        "flatness_segment_std": "n/a",
-        "perimeter_segment_mean": "n/a",
-        "perimeter_segment_std": "n/a",
-        "circularity_segment_mean": "n/a",
-        "circularity_segment_std": "n/a",
-        "r_GradientMean_segment_mean": "n/a",
-        "r_GradientMean_segment_std": "n/a",
-        "b_GradientMean_segment_mean": "n/a",
-        "b_GradientMean_segment_std": "n/a",
-        "r_cytoIntensityMean_segment_mean": "n/a",
-        "r_cytoIntensityMean_segment_std": "n/a",
-        "b_cytoIntensityMean_segment_mean": "n/a",
-        "b_cytoIntensityMean_segment_std": "n/a",
-        "elongation_segment_mean": "n/a",
-        "elongation_segment_std": "n/a",
-        "tile_minx": patch_data['tile_minx'],
-        "tile_miny": patch_data['tile_miny'],
-        "datetime": datetime.now()
-    }
+    mydoc = {"case_id": CASE_ID, "image_width": image_width, "image_height": image_height, "mpp_x": mpp_x,
+        "mpp_y": mpp_y, "user": USER_NAME, "tumorFlag": "tumor", "patch_index": patch_index,
+        "patch_min_x_pixel": patch_data['patch_minx'], "patch_min_y_pixel": patch_data['patch_miny'],
+        "patch_size": PATCH_SIZE, "patch_polygon_area": patch_polygon_area, "nucleus_area": patch_data['nucleus_area'],
+        "percent_nuclear_material": percent_nuclear_material, # "patch_area_selected_percentage": 100.0,
+        "grayscale_patch_mean": 0.0, "grayscale_patch_std": 0.0, "hematoxylin_patch_mean": 0.0,
+        "hematoxylin_patch_std": 0.0, "grayscale_segment_mean": "n/a", "grayscale_segment_std": "n/a",
+        "hematoxylin_segment_mean": "n/a", "hematoxylin_segment_std": "n/a", "flatness_segment_mean": "n/a",
+        "flatness_segment_std": "n/a", "perimeter_segment_mean": "n/a", "perimeter_segment_std": "n/a",
+        "circularity_segment_mean": "n/a", "circularity_segment_std": "n/a", "r_GradientMean_segment_mean": "n/a",
+        "r_GradientMean_segment_std": "n/a", "b_GradientMean_segment_mean": "n/a", "b_GradientMean_segment_std": "n/a",
+        "r_cytoIntensityMean_segment_mean": "n/a", "r_cytoIntensityMean_segment_std": "n/a",
+        "b_cytoIntensityMean_segment_mean": "n/a", "b_cytoIntensityMean_segment_std": "n/a",
+        "elongation_segment_mean": "n/a", "elongation_segment_std": "n/a", "tile_minx": patch_data['tile_minx'],
+        "tile_miny": patch_data['tile_miny'], "datetime": datetime.now()}
 
     return mydoc
 
@@ -526,8 +506,7 @@ def calculate(tile_data):
     # Iterate through tile data
     for key, val in tile_data.items():
         # Create patches
-        do_tiles(val, slide)
-        # exit(0)  # TESTING ONE.
+        do_tiles(val, slide)  # exit(0)  # TESTING ONE.
 
     slide.close()
 
@@ -613,9 +592,8 @@ def tile_operations(patch, type, name_prefix, w, h):
     percentiles = [10, 25, 50, 75, 90]
     for i in range(len(percentiles)):
         name = name_prefix + '_patch_percentile_' + str(percentiles[i])
-        data[name] = np.percentile(img_array, percentiles[i])
-        # print(name_prefix + " patch {} percentile: {}".format(percentiles[i],
-        # np.percentile(img_array, percentiles[i])))
+        data[name] = np.percentile(img_array, percentiles[
+            i])  # print(name_prefix + " patch {} percentile: {}".format(percentiles[i],  # np.percentile(img_array, percentiles[i])))
 
     return data
 
@@ -740,10 +718,9 @@ def do_tiles(data, slide):
                 else:
                     print('not so much')
 
-            update_db(slide, {'df': df2, 'nucleus_area': nucleus_area, 'patch_num': patch_num,
-                              'patch_minx': minx, 'patch_miny': miny, 'tile_minx': data['tile_minx'],
-                              'tile_miny': data['tile_miny'], 'image_width': data['image_width'],
-                              'image_height': data['image_height']}, coll_name)
+            update_db(slide, {'df': df2, 'nucleus_area': nucleus_area, 'patch_num': patch_num, 'patch_minx': minx,
+                              'patch_miny': miny, 'tile_minx': data['tile_minx'], 'tile_miny': data['tile_miny'],
+                              'image_width': data['image_width'], 'image_height': data['image_height']}, coll_name)
 
     elapsed_time = time.time() - start_time
     print('Runtime do_tiles: ')

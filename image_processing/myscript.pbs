@@ -1,4 +1,5 @@
 #!/bin/bash
+# Script for Portable Batch System (PBS)
 #LongQ will tell it to run on compute node
 #PBS -q longq
 # set name of job

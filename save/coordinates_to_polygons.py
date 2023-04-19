@@ -1,3 +1,4 @@
+# This code converts a list of coordinate points into a list of polygons.
 def coordinates_to_polygons(coordinates_list):
     """
     Clean up and convert to something we can use.
@@ -23,4 +24,3 @@ def coordinates_to_polygons(coordinates_list):
 
     # Return list of polygons
     return m_poly_list
-

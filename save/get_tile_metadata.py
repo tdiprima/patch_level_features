@@ -1,3 +1,5 @@
+# This script reads JSON files in a specified directory tree, extracts metadata such as tile width, height, and
+# minimum x,y points, and returns a list of unique tile minimum points and the tile width and height.
 import json
 import os
 

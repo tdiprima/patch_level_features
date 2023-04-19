@@ -1,5 +1,8 @@
-# Point in Polygon & Intersect
-# https://automating-gis-processes.github.io/2017/lessons/L3/point-in-polygon.html
+"""
+This script demonstrates how to check if a point lies inside a polygon and whether two lines
+intersect or touch, using the Shapely library for geometric operations.
+https://automating-gis-processes.github.io/2017/lessons/L3/point-in-polygon.html
+"""
 
 from shapely.geometry import Point, Polygon
 from shapely.geometry import LineString, MultiLineString

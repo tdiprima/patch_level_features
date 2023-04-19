@@ -1,3 +1,8 @@
+"""
+This script checks if every JSON file has a matching CSV file and makes sure the data inside both files
+lines up properly, like making sure coordinates and dimensions in the JSON match what's in the CSV.
+It's basically a double-check system for organized data.
+"""
 import os
 import json
 import pandas
@@ -74,4 +79,3 @@ def check_dims():
 
 # check_dims()
 check_1_to_1()
-

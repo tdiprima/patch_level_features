@@ -1,8 +1,9 @@
-# Detecting multiple bright spots in an image with Python and OpenCV
-# https://www.pyimagesearch.com/2016/10/31/detecting-multiple-bright-spots-in-an-image-with-python-and-opencv/
-# Code MODIFIED by me.
+"""
+Detecting multiple bright spots in an image with Python and OpenCV
+https://www.pyimagesearch.com/2016/10/31/detecting-multiple-bright-spots-in-an-image-with-python-and-opencv/
+Code MODIFIED by me.
+"""
 
-# import the necessary packages
 from imutils import contours
 from skimage import measure
 import numpy as np

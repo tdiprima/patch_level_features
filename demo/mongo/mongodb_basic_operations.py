@@ -1,4 +1,9 @@
-# https://realpython.com/introduction-to-mongodb-and-python/
+"""
+This script demonstrates connecting to a MongoDB database, querying and iterating through documents
+in a collection, and performing basic operations such as inserting test data into a MongoDB collection.
+https://realpython.com/introduction-to-mongodb-and-python/
+"""
+
 from pymongo import MongoClient, errors
 import datetime
 

@@ -1,3 +1,5 @@
+# Reads CSV files from directories, skips empty files, and returns list of dataframes.
+# Then filters dataframes with polygons within or intersecting with specified tumor polygons.
 import os
 import time
 
@@ -25,11 +27,8 @@ def read_data():
                     if data_frame.empty:
                         continue
                     # Return list of data frames
-                    ret_list.append(data_frame)
-                    # Return list of polygons
-                    # val = data_frame['Polygon'].values[0]
-                    # ply = string_to_polygon(val)
-                    # ret_list.append(ply)
+                    ret_list.append(
+                        data_frame)  # Return list of polygons  # val = data_frame['Polygon'].values[0]  # ply = string_to_polygon(val)  # ret_list.append(ply)
 
     except Exception as ex:
         print('Error in read_data: ', ex)
@@ -126,4 +125,3 @@ IMAGE_HEIGHT = 1
 # print('len smaller_list: ', len(smaller_list))
 # del huge_list
 # gc.collect()
-

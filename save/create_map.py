@@ -1,8 +1,12 @@
+# This script creates a map of out_file_prefixes to polygons, where each polygon is associated with a corresponding
+# JSON and CSV file, and returns a dictionary that can be used to find polygons within or intersecting a tumor region.
+
 # TOOK TOO LONG TO RUN. LIKE 1 HOUR.
 # THAT'S WHY INSTEAD OF DOING ALL THE POLYGONS WE DO A SUBSET.
-import time
-import pandas
 import json
+import time
+
+import pandas
 
 
 def create_map(json_files, csv_files):
@@ -47,8 +51,7 @@ def create_map(json_files, csv_files):
 
             rtn_dict.update(path_poly)
 
-        f.close()
-        # rtn_dict.update(path_poly)
+        f.close()  # rtn_dict.update(path_poly)
 
     elapsed_time = time.time() - start_time
     print('Runtime create_map: ')
@@ -59,7 +62,6 @@ def create_map(json_files, csv_files):
 
 def string_to_polygon(s, imw, imh):
     print('dummy!')
-
 
 # pre_poly_map = create_map(JSON_FILES, CSV_FILES)
 # print('pre_poly_map', len(pre_poly_map))

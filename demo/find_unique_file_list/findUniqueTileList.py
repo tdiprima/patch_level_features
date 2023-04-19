@@ -1,6 +1,10 @@
+"""
+This script identifies unique tile coordinates by parsing JSON metadata files in a hierarchical folder
+structure, based on a specified case ID and prefixes, and prints the unique tile coordinate list.
+"""
+import csv
 import json
 import os
-import csv
 
 
 def find_unique_tile_list(local_img_folder, prefix_list):
@@ -32,16 +36,17 @@ def find_unique_tile_list(local_img_folder, prefix_list):
     return map_output
 
 
-def find_prefix_list(my_home, case_id):
+def find_prefix_list(work_dir, case_id):
     """
-
-    :param my_home:
+    Searches for and extracts a list of prefixes associated with a given case_id from a file named
+    case_id_prefix.txt located in the specified work_dir directory.
+    :param work_dir:
     :param case_id:
     :return:
     """
     prefix_list = []
     input_file = "case_id_prefix.txt"
-    prefix_file = os.path.join(my_home, input_file)
+    prefix_file = os.path.join(work_dir, input_file)
     print('prefix_file', prefix_file)
     with open(prefix_file, 'r') as my_file:
         reader = csv.reader(my_file, delimiter=',')
@@ -59,10 +64,10 @@ def find_prefix_list(my_home, case_id):
 
 
 case_id = 'PC_051_0_1'
-my_home = '/data1/tdiprima'
+work_dir = '/data1/tdiprima'
 
-prefix_list = find_prefix_list(my_home, case_id)
-local_dataset_folder = os.path.join(my_home, 'dataset')
+prefix_list = find_prefix_list(work_dir, case_id)
+local_dataset_folder = os.path.join(work_dir, 'dataset')
 local_img_folder = os.path.join(local_dataset_folder, case_id)
 
 unique_tile_min_point_list = find_unique_tile_list(local_img_folder, prefix_list)

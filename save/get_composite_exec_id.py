@@ -1,3 +1,5 @@
+# This script connects to a MongoDB instance, retrieves the analysis execution ID for a specific image and case ID, and
+# returns that ID in a dictionary.
 from pymongo import MongoClient, errors
 
 
@@ -37,6 +39,5 @@ def mongodb_connect(client_uri):
 
 
 args = []
-CASE_ID = ''
-# Get exec_id for polygons.
+CASE_ID = ''  # Get exec_id for polygons.
 # composite_exec_id = get_composite_exec_id()

@@ -1,4 +1,9 @@
-# Image and patient level features, within tumor regions
+"""
+Image and patient level features, within tumor regions
+This script analyzes image and region-level features for tumor data by processing polygons,
+calculating intersections, detecting bright spots, and computing area ratios, using CSV data
+and image processing libraries for geometric and statistical computations.
+"""
 
 from __future__ import division
 from __future__ import print_function

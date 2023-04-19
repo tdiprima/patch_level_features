@@ -1,3 +1,20 @@
+"""
+Script: chop.py
+
+Purpose:
+This script reads metadata and feature data from JSON and CSV files, processes large whole-slide images
+by dividing them into tiles, and checks if specific geometric features fall within these tiles, saving
+relevant tiles and their corresponding features for further analysis.
+
+Notes:
+- The script assumes specific JSON metadata fields (`patch_width`, `patch_height`, `patch_minx`, `patch_miny`).
+- The tile size is hardcoded as 512x512 pixels.
+- Ensure required image files and metadata files are available in the specified paths.
+
+Usage:
+Modify paths to the JSON metadata file and the image file as needed before execution.
+"""
+
 import json
 import pandas
 from planar import BoundingBox, Vec2

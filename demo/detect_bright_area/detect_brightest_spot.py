@@ -1,13 +1,14 @@
-# Finding the Brightest Spot in an Image using Python and OpenCV
-# https://www.pyimagesearch.com/2014/09/29/finding-brightest-spot-image-using-python-opencv/
-# Code MODIFIED by me.
+"""
+Finding the Brightest Spot in an Image using Python and OpenCV
+https://www.pyimagesearch.com/2014/09/29/finding-brightest-spot-image-using-python-opencv/
+Code MODIFIED by me.
 
-# USAGE
-# python bright.py --image images/retina.png --radius 41
-# python bright.py --image images/retina-noise.png --radius 41
-# python bright.py --image images/moon.png --radius 61
+USAGE
+python bright.py --image images/retina.png --radius 41
+python bright.py --image images/retina-noise.png --radius 41
+python bright.py --image images/moon.png --radius 61
+"""
 
-# import the necessary packages
 import argparse
 import cv2
 import sys
@@ -29,7 +30,7 @@ def show_output(name, img):
 
 def susceptible_method(grayscale_img, orig_image):
     """
-    Finds 1 pixel having largest intensity value.
+    Finds 1 pixel having the largest intensity value.
     Performs a naive attempt to find the (x, y) coordinates of
     the area of the image with the largest intensity value.
     :param grayscale_img:
@@ -52,7 +53,7 @@ def susceptible_method(grayscale_img, orig_image):
 
 def more_robust_method(grayscale_img, orig_image):
     """
-    Shows ROI; not just 1 pixel having highest intensity.
+    Shows ROI; not just 1 pixel having the highest intensity.
     Applies a Gaussian blur to the image then finds the brightest region.
     :param grayscale_img:
     :param orig_image:

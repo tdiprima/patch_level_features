@@ -1,3 +1,18 @@
+"""
+Automated Analysis and Database Population of Digital Imaging of Pathology
+
+Automates the analysis and population of a database from digital images of pathology.
+Processes slide images, detects tumor regions, and extracts relevant features to populate a MongoDB database.
+The script involves various steps, including:
+
+1. Slide image processing: It reads in slide images, extracts relevant features such as tumor region markings, and processes the images to identify relevant regions.
+2. Data extraction: It extracts data from CSV files and combines it with the processed slide images to create a comprehensive dataset.
+3. Data analysis: It performs various data analysis operations, including calculating features such as the area of tumor regions, patch size, and others.
+4. Database population: It populates a MongoDB database with the extracted and analyzed data.
+
+This script provides an automation framework for processing and analyzing digital images of pathology.
+It can be customized and extended to accommodate specific requirements and use cases.
+"""
 import argparse
 import json
 import os
@@ -19,8 +34,7 @@ from skimage.color import separate_stains, hed_from_rgb
 
 def assure_path_exists(path):
     """
-    If path exists, great.
-    If not, then create it.
+    Checks if a directory exists, and creates it if it doesn't.
     :param path:
     :return:
     """
@@ -88,7 +102,7 @@ def copy_src_data(dest):
 
 def get_tumor_markup(user_name):
     """
-    Find what the pathologist circled as tumor.
+    Extracts data related to tumor regions marked by a pathologist.
     :param user_name:
     :return:
     """
@@ -131,7 +145,7 @@ def get_tumor_markup(user_name):
 
 def markup_to_polygons(markup_list):
     """
-    Clean up and convert to something we can use.
+    Converts tumor region data into polygons.
     :param markup_list:
     :return:
     """
@@ -319,7 +333,7 @@ def get_poly_within(jfiles, tumor_list):
 
 def aggregate_data(jfile_objs, CSV_FILES):
     """
-    Get data
+    Aggregates data from CSV files and processed slide images.
     :param jfile_objs:
     :param CSV_FILES
     :return:
@@ -503,8 +517,8 @@ def update_db(slide, patch_data, db_name):
 
 def calculate(tile_data):
     """
-    Mean and std of Perimeter, Flatness, Circularity,
-    r_GradientMean, b_GradientMean, b_cytoIntensityMean, r_cytoIntensityMean.
+    Performs various data analysis operations, including calculating features such as area, patch size, and others.
+    Mean and std of Perimeter, Flatness, Circularity, r_GradientMean, b_GradientMean, b_cytoIntensityMean, r_cytoIntensityMean.
     :param tile_data:
     :return:
     """

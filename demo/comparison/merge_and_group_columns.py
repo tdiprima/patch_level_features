@@ -1,3 +1,8 @@
+"""
+This script groups rows from a DataFrame (df2) by a column, reshapes the data, and merges it with another DataFrame (df1).
+You get a new table where each row from df1 is matched with all the extra grouped details from df2.
+"""
+
 import pandas as pd
 
 df1 = pd.DataFrame({'Column1': [1, 2, 3, 4, 5],

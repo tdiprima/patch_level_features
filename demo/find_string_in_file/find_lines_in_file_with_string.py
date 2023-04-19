@@ -1,4 +1,8 @@
-# https://www.quora.com/How-do-I-write-a-python-script-that-will-find-a-specific-string-in-a-txt-file-select-the-rest-of-string-surrounding-it-and-paste-in-another-txt
+"""
+This script extracts lines containing a specific substring from a source text file and writes those lines to a
+destination text file, while also providing utility functions for searching and modifying strings within files.
+https://www.quora.com/How-do-I-write-a-python-script-that-will-find-a-specific-string-in-a-txt-file-select-the-rest-of-string-surrounding-it-and-paste-in-another-txt
+"""
 
 
 def get_lines_with(input_str, substr):

@@ -1,5 +1,6 @@
-# Compare patch by patch, the patch level features from Bridge's implementation
-# with those from Tammy's implementation [get the difference]
+# Retrieves data related to a specific case_id from a MongoDB, compares the number type feature values from two different
+# sources within the database, notes the absolute difference for each feature if it is a number, and writes the combined
+# results to a csv file.
 import csv
 
 import numpy as np
@@ -90,4 +91,3 @@ def get_data():
 get_data()
 
 exit(0)
-
