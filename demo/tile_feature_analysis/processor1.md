@@ -34,4 +34,28 @@ Refactored the code to reduce nesting and replaced the use of `planar` with `sha
 3. **Reduced Nesting**:
    - Logic inside the nested loops was moved to helper functions (`generate_tile_bbox`, `process_tile_features`).
 
+## Process tile features
+
+Let's define functionality for `process_tile_features` based on common use cases for detecting features within tiles. I'll assume that geometric features are represented as a set of polygons, and we’ll check for intersections with the tile's bounding box. Here's a potential implementation:
+
+### Actions When Features Are Found
+1. **Save Matching Features**:
+   - Extract features that intersect the tile.
+   - Save their metadata (e.g., coordinates, IDs) in a structured format like a CSV or JSON file.
+
+2. **Highlight Tiles**:
+   - Flag tiles containing features for additional processing.
+   - Save a visual representation, such as drawing the intersecting features on the tile image.
+
+3. **Logging**:
+   - Log which tiles contain features and their details.
+
+I'll update the `process_tile_features` function with these capabilities.
+
+I've updated the `process_tile_features` function to:
+
+1. **Check for Intersections**: Identify features that intersect with each tile's bounding box.
+2. **Record Matching Features**: Save details of intersecting features (ID and coordinates).
+3. **Output Results**: Save tile paths and matching feature data into a `feature_results.json` file.
+
 <br>
